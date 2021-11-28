@@ -1,14 +1,15 @@
-import { Command } from 'commander';
 import * as fs from 'fs';
 import * as json5 from 'json5';
 import * as os from 'os';
 import * as tmpPromise from 'tmp-promise';
-import { BuildTargetPlatform } from './composer/raw';
+
+import { Command, Option } from 'commander';
+
 import { BuildSettings } from './composer/settings';
 import { ClangPlugin } from './plugins/clang';
-import { mkdir } from './util/mkdir';
-import { ResolvedPath } from './util/resolved_path';
 import { FileWatcher } from './watcher/file';
+import { ResolvedPath } from './util/resolved_path';
+import { mkdir } from './util/mkdir';
 
 const defer: (() => void)[] = [() => {}];
 const cleanup = (...args) => {
@@ -32,6 +33,11 @@ program
     .argument('<config...>')
     .option('--release', 'build the release version', false)
     .option('-t, --tmp <directory>', 'temporary directory to output intermediate build files to', '')
+    .addOption(
+        new Option('-m, --mode <mode>', 'target to build for')
+            .choices(['win32', 'darwin', 'linux', 'wasm'])
+            .default(os.platform()),
+    )
     .action(async function (this: Command, args: string[]) {
         try {
             const opts = Object.assign({}, this.opts());
@@ -51,7 +57,7 @@ program
             for (const config of args) {
                 const configPath = cwd.relative(config);
                 const watcher = new FileWatcher(configPath.dirname());
-                const settings = new BuildSettings(os.platform() as BuildTargetPlatform);
+                const settings = new BuildSettings(opts.mode);
                 settings.load(
                     json5.parse(await fs.promises.readFile(configPath.toString(), { encoding: 'utf8' })),
                     configPath,

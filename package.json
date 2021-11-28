@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "description": "",
   "main": "lib/index.js",
+  "bin": "bin/cobble",
   "scripts": {
     "build": "tsc",
-    "install": "npm run build",
     "test": "mocha --require ts-node/register --extensions ts 'src/tests/**/*.ts'",
     "test-watch": "mocha --require ts-node/register --extensions ts --watch --watch-files src 'src/tests/**/*.ts'",
     "test-coverage": "nyc --reporter=html mocha --require ts-node/register --extensions ts 'src/tests/**/*.ts'"
@@ -14,7 +14,7 @@
     "name": "Scott Bennett",
     "email": "scottbennett912@gmail.com"
   },
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.11.10",
