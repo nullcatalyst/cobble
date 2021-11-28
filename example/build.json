@@ -1,0 +1,6 @@
+{
+    "name": "example",
+    "output": "../out/${EXE:example}",
+    "std": "c++17",
+    "srcs": ["main.cpp"]
+}
