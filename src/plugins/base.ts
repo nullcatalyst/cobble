@@ -1,9 +1,12 @@
 import { BaseWatcher } from '../watcher/base';
 import { BuildSettings } from '../composer/settings';
+import { ResolvedPath } from '../util/resolved_path';
 
 export type ResetPluginWatchedFilesFn = () => void;
 
-export abstract class BasePlugin {
+export class BasePlugin {
+    constructor(opts: { 'tmp': ResolvedPath }) {}
+
     name(): string {
         throw new Error('cannot use a plugin without a name');
     }

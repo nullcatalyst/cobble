@@ -7,8 +7,6 @@ import { Command, Option } from 'commander';
 
 import { BasePlugin } from './plugins/base';
 import { BuildSettings } from './composer/settings';
-import { ClangPlugin } from './plugins/clang';
-import { CopyPlugin } from './plugins/copy';
 import { FileWatcher } from './watcher/file';
 import { ResolvedPath } from './util/resolved_path';
 import { createMailbox } from './util/mailbox';
@@ -36,6 +34,15 @@ program
     .argument('<config...>')
     .option('--release', 'build the release version', false)
     .option('-t, --tmp <directory>', 'temporary directory to output intermediate build files to', '')
+    .option(
+        '-p, --plugin <plugin>',
+        'list of plugins to use',
+        (value, prev) => {
+            prev.push(value);
+            return prev;
+        },
+        [],
+    )
     .addOption(
         new Option('-m, --mode <mode>', 'target to build for')
             .choices(['win32', 'darwin', 'linux', 'wasm'])
@@ -59,7 +66,12 @@ program
             const watcher = new FileWatcher();
             defer.push(() => watcher.stop());
 
-            const plugins: BasePlugin[] = [new ClangPlugin(tmp), new CopyPlugin()];
+            const plugins: BasePlugin[] = (opts.plugin as string[]).map(plugin => {
+                const PluginClass = require(`cobble-plugin-${plugin}`).default as typeof BasePlugin;
+                return new PluginClass({
+                    'tmp': tmp,
+                });
+            });
             const srcExtProtocols = plugins.reduce(
                 (srcExtProtocols, plugin) =>
                     plugin.provideProtocolExtensions().reduce((prev, ext) => {

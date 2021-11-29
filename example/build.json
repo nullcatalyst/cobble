@@ -1,6 +1,0 @@
-{
-    "name": "example",
-    "output": "../out/${EXE:example}",
-    "std": "c++17",
-    "srcs": ["copy:asset.txt", "main.cpp"]
-}

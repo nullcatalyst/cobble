@@ -1,6 +1,6 @@
 import { ResolvedPath } from '../util/resolved_path';
 
-export const enum EventType {
+export enum EventType {
     AddFile,
     ChangeFile,
     DeleteFile,
