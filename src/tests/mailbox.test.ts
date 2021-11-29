@@ -47,7 +47,7 @@ describe('mailbox', () => {
         await p2;
     });
 
-    it('should ignore events that come after the queued event', async () => {
+    it('should ignore events that are timestamped before the queued event', async () => {
         const filePath = ResolvedPath.absolute('/test');
         const mailboxFn = createMailbox(async event => {
             assert.strictEqual(event, expectedEvent);

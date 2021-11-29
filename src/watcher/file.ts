@@ -6,31 +6,28 @@ import { Event, EventType } from './event';
 import { ResolvedPath } from '../util/resolved_path';
 
 export class FileWatcher extends BaseWatcher {
-    private readonly _watcher: chokidar.FSWatcher;
+    private readonly _watchers: chokidar.FSWatcher[] = [];
 
-    constructor(basePath: ResolvedPath) {
-        super();
-
+    start(basePath: ResolvedPath): void {
         const watcher = chokidar
             .watch(basePath.toString())
             .on('add', fileName => {
-                console.log(`File ${fileName} has been added`);
-                this.emit(new Event(EventType.AddFile, basePath.relative(fileName)));
+                this.emit(new Event(EventType.AddFile, basePath.join(fileName)));
             })
             .on('change', fileName => {
-                console.log(`File ${fileName} has been changed`);
-                this.emit(new Event(EventType.ChangeFile, basePath.relative(fileName)));
+                this.emit(new Event(EventType.ChangeFile, basePath.join(fileName)));
             })
             .on('unlink', fileName => {
-                console.log(`File ${fileName} has been removed`);
-                this.emit(new Event(EventType.DeleteFile, basePath.relative(fileName)));
+                this.emit(new Event(EventType.DeleteFile, basePath.join(fileName)));
             });
 
-        this._watcher = watcher;
+        this._watchers.push(watcher);
     }
 
     override stop(): void {
-        super.stop();
-        this._watcher.close();
+        for (const watcher of this._watchers) {
+            watcher.close();
+        }
+        this._watchers.length = 0;
     }
 }

@@ -4,6 +4,7 @@ import * as json5 from 'json5';
 import { BuildTargetPlatform, BuildType, RawBuildFile } from './raw';
 
 import { ResolvedPath } from '../util/resolved_path';
+import { Target } from './target';
 
 const KNOWN_TARGETS = ['win32', 'darwin', 'linux', 'wasm'];
 
@@ -17,7 +18,7 @@ export class BuildSettings {
     private _type: BuildType;
     private _release: boolean;
 
-    private _srcs: ResolvedPath[];
+    private _srcs: Target[];
     private _includes: ResolvedPath[];
     private _defines: string[];
     private _flags: string[];
@@ -25,7 +26,7 @@ export class BuildSettings {
     constructor(target: BuildTargetPlatform) {
         this._raw = {};
         this._basePath = ResolvedPath.absolute('/');
-        this._outputPath = this._basePath.relative('a.out');
+        this._outputPath = this._basePath.join('a.out');
 
         this._name = '__unnamed__';
         this._target = target;
@@ -38,7 +39,11 @@ export class BuildSettings {
         this._flags = [];
     }
 
-    async load(raw: RawBuildFile, filePath: ResolvedPath): Promise<void> {
+    async load(
+        raw: RawBuildFile,
+        filePath: ResolvedPath,
+        fileExtProtocols: { [ext: string]: string } = {},
+    ): Promise<void> {
         const isString = s => typeof s === 'string';
 
         const basePath = filePath.dirname();
@@ -47,17 +52,19 @@ export class BuildSettings {
         this._raw = raw;
         this._basePath = basePath;
         this._outputPath = raw['output']
-            ? basePath.relative(this._replaceVariables(raw['output']))
+            ? basePath.join(this._replaceVariables(raw['output']))
             : basePath.replaceFileName(_createOutputName(this._target, this._type, name));
         this._name = name;
         this._defines = raw['defines'] ?? [];
         this._flags = raw['flags'] ?? [];
 
-        this._srcs = (raw['srcs'] ?? []).filter(isString).map(src => basePath.relative(this._replaceVariables(src)));
+        this._srcs = (raw['srcs'] ?? [])
+            .filter(isString)
+            .map(src => Target.parse(this._replaceVariables(src), basePath, fileExtProtocols));
         this._defines = this._defines.filter(isString);
         this._includes = (raw['includes'] ?? [])
             .filter(isString)
-            .map(inc => basePath.relative(this._replaceVariables(inc)));
+            .map(inc => basePath.join(this._replaceVariables(inc)));
         this._flags = this._flags.filter(isString);
 
         const knownPlatforms = KNOWN_TARGETS.reduce(
@@ -89,7 +96,7 @@ export class BuildSettings {
                 throw new Error(`invalid dependency definition: dependency [${dep}] must be a string`);
             }
 
-            const depPath = basePath.relative(this._replaceVariables(dep));
+            const depPath = basePath.join(this._replaceVariables(dep));
             const depBuild = new BuildSettings(this._target);
             const raw = json5.parse<RawBuildFile>(await fs.promises.readFile(depPath.toString(), { encoding: 'utf8' }));
             await depBuild.load(raw, depPath);
@@ -125,7 +132,7 @@ export class BuildSettings {
         return !this._release;
     }
 
-    get srcs(): ResolvedPath[] {
+    get srcs(): Target[] {
         return this._srcs;
     }
 

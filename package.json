@@ -8,7 +8,8 @@
     "build": "tsc",
     "test": "mocha --require ts-node/register --extensions ts 'src/tests/**/*.ts'",
     "test-watch": "mocha --require ts-node/register --extensions ts --watch --watch-files src 'src/tests/**/*.ts'",
-    "test-coverage": "nyc --reporter=html mocha --require ts-node/register --extensions ts 'src/tests/**/*.ts'"
+    "test-coverage": "nyc --reporter=html mocha --require ts-node/register --extensions ts 'src/tests/**/*.ts'",
+    "example": "ts-node src/bin.ts build example/build.json"
   },
   "author": {
     "name": "Scott Bennett",

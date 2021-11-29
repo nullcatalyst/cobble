@@ -1,14 +1,13 @@
-import * as os from 'os';
-
 import { Event, EventType } from '../watcher/event';
 
-import { BasePlugin } from './base';
+import { BasePlugin, ResetPluginWatchedFilesFn } from './base';
 import { BaseWatcher } from '../watcher/base';
 import { BuildSettings } from '../composer/settings';
 import { ResolvedPath } from '../util/resolved_path';
 import { createMailbox } from '../util/mailbox';
 import { mkdir } from '../util/mkdir';
 import { spawn } from '../util/spawn';
+import { Target } from '../composer/target';
 
 export class ClangPlugin extends BasePlugin {
     private readonly _tmpPath: ResolvedPath;
@@ -19,43 +18,58 @@ export class ClangPlugin extends BasePlugin {
         this._tmpPath = tmpPath;
     }
 
-    async process(watcher: BaseWatcher, settings: BuildSettings): Promise<void> {
-        const imports = await this._listImports(settings);
-        for (const [srcStr, hdrs] of imports.entries()) {
+    override name(): string {
+        return 'clang';
+    }
+
+    override provideProtocolExtensions(): string[] {
+        return ['c', 'cc', 'cpp'];
+    }
+
+    override async process(watcher: BaseWatcher, settings: BuildSettings): Promise<ResetPluginWatchedFilesFn> {
+        const includes = await this._listIncludesForAllFiles(settings);
+        const cleanupFns = [...includes.entries()].map(([srcStr, hdrs]) => {
             const src = ResolvedPath.absolute(srcStr);
             const obj = this._getObjectFilePath(settings, src);
 
-            // Watch the header files that the source file imports
-            const cleanupWatchHdrs = [];
-            for (const hdr of hdrs) {
-                console.log(`${src} -> ${hdr}`);
-                const cleanupWatchHdr = watcher.add(
-                    hdr,
-                    createMailbox(async event => {
-                        // if (event.type === EventType.DeleteFile) {
-                        //     cleanup();
-                        //     return;
-                        // }
+            // Watch the header files that the source file includes
+            let cleanupWatchHdrs: (() => void)[] = [];
+            const watchHdrs = (hdrs: ResolvedPath[]) => {
+                for (const hdr of hdrs) {
+                    const cleanupWatchHdr = watcher.add(
+                        hdr,
+                        createMailbox(async event => {
+                            // if (event.type === EventType.DeleteFile) {
+                            //     cleanup();
+                            //     return;
+                            // }
 
-                        await this._compile(src, settings);
-                        watcher.emit(new Event(EventType.BuildFile, obj, event.timestamp));
-                    }),
-                );
-                cleanupWatchHdrs.push(cleanupWatchHdr);
-            }
+                            await this._compile(src, settings);
+                            watcher.emit(new Event(EventType.BuildFile, obj, event.timestamp));
+                        }),
+                    );
+                    cleanupWatchHdrs.push(cleanupWatchHdr);
+                }
+            };
+
+            watchHdrs(hdrs);
 
             // Watch the source file directly
             const cleanupWatchSrc = watcher.add(
                 src,
                 createMailbox(async event => {
+                    // Remove the existing headers
+                    for (const cleanupWatchHdr of cleanupWatchHdrs) {
+                        cleanupWatchHdr();
+                    }
+                    cleanupWatchHdrs.length = 0;
+
                     if (event.type === EventType.DeleteFile) {
-                        for (const cleanupWatchHdr of cleanupWatchHdrs) {
-                            cleanupWatchHdr();
-                        }
-                        cleanupWatchSrc();
+                        // cleanupWatchSrc();
                         return;
                     }
 
+                    watchHdrs(await this._listIncludesForSingleFile(src, settings));
                     await this._compile(src, settings);
                     watcher.emit(new Event(EventType.BuildFile, obj, event.timestamp));
                 }),
@@ -69,20 +83,28 @@ export class ClangPlugin extends BasePlugin {
                 }),
             );
 
-            // TODO: if the build file changes, invalidate everything
-            // watcher.add(settings.basePath, event => {
-            //     for (const cleanupHdr of cleanupHdrs) {
-            //         cleanupHdr();
-            //     }
-            //     cleanup();
-            // });
-        }
+            return () => {
+                cleanupWatchObj();
+                cleanupWatchSrc();
+                for (const cleanupWatchHdr of cleanupWatchHdrs) {
+                    cleanupWatchHdr();
+                }
+                cleanupWatchHdrs.length = 0;
+            };
+        });
+
+        return () => {
+            for (const cleanupFn of cleanupFns) {
+                cleanupFn();
+            }
+        };
     }
 
-    async _listImports(settings: BuildSettings): Promise<Map<string, ResolvedPath[]>> {
-        const imports = new Map<string, ResolvedPath[]>();
+    async _listIncludesForAllFiles(settings: BuildSettings): Promise<Map<string, ResolvedPath[]>> {
+        const includes = new Map<string, ResolvedPath[]>();
 
-        const args = this._generateArgs(settings, undefined, settings.srcs, false, false);
+        const srcs = settings.srcs.filter(src => src.protocol == this.name()).map(src => src.path);
+        const args = this._generateArgs(settings, undefined, srcs, false, false);
         args.push('-MM');
 
         const cc = settings.target === 'win32' ? 'clang.exe' : 'clang';
@@ -104,13 +126,43 @@ export class ClangPlugin extends BasePlugin {
                     .split(/\s+/);
 
                 const basePath = settings.basePath;
-                imports.set(
-                    basePath.relative(src).toString(),
-                    hdrs.map(hdr => basePath.relative(hdr)),
+                includes.set(
+                    basePath.join(src).toString(),
+                    hdrs.map(hdr => basePath.join(hdr)),
                 );
             });
 
-        return imports;
+        return includes;
+    }
+
+    async _listIncludesForSingleFile(src: ResolvedPath, settings: BuildSettings): Promise<ResolvedPath[]> {
+        let includes: ResolvedPath[] = [];
+        const args = this._generateArgs(settings, undefined, [src], false, false);
+        args.push('-MM');
+
+        const cc = settings.target === 'win32' ? 'clang.exe' : 'clang';
+        const result = await spawn(cc, args);
+        result.stdout
+            .replaceAll('\r', '')
+            .replaceAll('\\\n', ' ')
+            .split('\n')
+            .filter(line => line)
+            .forEach(line => {
+                const index = line.indexOf(':');
+                if (index < 0) {
+                    throw new Error('make file has invalid format');
+                }
+
+                const [src, ...hdrs] = line
+                    .slice(index + 1)
+                    .trim()
+                    .split(/\s+/);
+
+                const basePath = settings.basePath;
+                includes = hdrs.map(hdr => basePath.join(hdr));
+            });
+
+        return includes;
     }
 
     async _compile(src: ResolvedPath, settings: BuildSettings): Promise<void> {
@@ -133,7 +185,9 @@ export class ClangPlugin extends BasePlugin {
             ...this._generateArgs(
                 settings,
                 settings.outputPath,
-                settings.srcs.map(src => this._getObjectFilePath(settings, src)),
+                settings.srcs
+                    .filter(src => src.protocol == this.name())
+                    .map(src => this._getObjectFilePath(settings, src)),
                 true,
                 settings.target === 'win32',
             ),
@@ -192,17 +246,15 @@ export class ClangPlugin extends BasePlugin {
         const args: string[] = [];
 
         if (!clangClExe) {
-            if (settings.target !== os.platform()) {
-                switch (settings.target) {
-                    case 'wasm':
-                        args.push('--target=wasm32-unknown-unknown', '-Xlinker', '--no-entry', '-nostdlib');
-                        args.push('-mmultivalue', '-Xclang', '-target-abi', '-Xclang', 'experimental-mv');
-                        args.push('-msimd128');
-                        args.push('-mtail-call');
-                        break;
-                    default:
-                        break;
-                }
+            switch (settings.target) {
+                case 'wasm':
+                    args.push('--target=wasm32-unknown-unknown', '-Xlinker', '--no-entry', '-nostdlib');
+                    args.push('-mmultivalue', '-Xclang', '-target-abi', '-Xclang', 'experimental-mv');
+                    args.push('-msimd128');
+                    args.push('-mtail-call');
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -264,8 +316,8 @@ export class ClangPlugin extends BasePlugin {
         return args;
     }
 
-    private _getObjectFilePath(settings: BuildSettings, src: ResolvedPath): ResolvedPath {
-        return src
+    private _getObjectFilePath(settings: BuildSettings, src: Target | ResolvedPath): ResolvedPath {
+        return (src instanceof Target ? src.path : src)
             .replaceBasePath(settings.basePath, this._tmpPath)
             .modifyFileName((name, ext) => (settings.target === 'win32' ? `${name}.obj` : `${name}.o`));
     }

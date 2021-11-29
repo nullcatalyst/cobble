@@ -5,27 +5,39 @@ import { ResolvedPath } from '../util/resolved_path';
 export type CleanupCallback = () => void;
 
 export abstract class BaseWatcher {
+    protected _verbosity: number;
     protected readonly _callbacks = new Map<string, ((event: Event) => void)[]>();
+
+    constructor(verbosity: number = 0) {
+        this._verbosity = verbosity;
+    }
 
     stop(): void {
         // Do nothing
     }
 
-    emit(event: Event): void {
-        console.log(`${IN_PROGRESS_EVENT_NAMES[event.type]} ${event.filePath}`);
+    emit(event: Event): Promise<void> {
+        if (this._verbosity > 1) {
+            console.log(`${IN_PROGRESS_EVENT_NAMES[event.type]} ${event.filePath}`);
+        }
+
         const callbacks = this._callbacks.get(event.filePath.toString());
         if (callbacks == null) {
-            console.log(`No callbacks for ${event.filePath}`);
+            if (this._verbosity > 0) {
+                console.log(`[WARN] no callbacks for ${event.filePath}`);
+            }
             return;
         }
 
-        callbacks.forEach(callback => {
-            try {
-                callback(event);
-            } catch (err) {
-                console.error(err);
-            }
-        });
+        return Promise.all(
+            callbacks.map(callback => {
+                try {
+                    callback(event);
+                } catch (err) {
+                    console.error(err);
+                }
+            }),
+        ).then(() => {});
     }
 
     add(filePath: ResolvedPath, callback: (event: Event) => void): CleanupCallback {
@@ -50,6 +62,9 @@ export abstract class BaseWatcher {
         const index = callbacks.indexOf(callback);
         if (index >= 0) {
             callbacks.splice(index, 1);
+            if (callbacks.length === 0) {
+                this._callbacks.delete(filePath.toString());
+            }
         }
     }
 }

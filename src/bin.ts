@@ -5,16 +5,19 @@ import * as tmpPromise from 'tmp-promise';
 
 import { Command, Option } from 'commander';
 
+import { BasePlugin } from './plugins/base';
 import { BuildSettings } from './composer/settings';
 import { ClangPlugin } from './plugins/clang';
+import { CopyPlugin } from './plugins/copy';
 import { FileWatcher } from './watcher/file';
 import { ResolvedPath } from './util/resolved_path';
+import { createMailbox } from './util/mailbox';
 import { mkdir } from './util/mkdir';
 
 const defer: (() => void)[] = [() => {}];
 const cleanup = (...args) => {
     if (defer.length > 0) {
-        console.log('... exitting ...', args);
+        console.log('--- exitting ---', args);
         defer.forEach(f => f());
         defer.length = 0;
         process.exit();
@@ -48,23 +51,52 @@ program
             }
 
             const cwd = ResolvedPath.absolute(process.cwd());
-            const tmp = cwd.relative(opts.tmp);
+            const tmp = cwd.join(opts.tmp);
 
             await mkdir(tmp);
 
-            // TODO: choose a better base directory than just the current working directory
-            const clang = new ClangPlugin(tmp);
-            for (const config of args) {
-                const configPath = cwd.relative(config);
-                const watcher = new FileWatcher(configPath.dirname());
-                const settings = new BuildSettings(opts.mode);
-                settings.load(
-                    json5.parse(await fs.promises.readFile(configPath.toString(), { encoding: 'utf8' })),
-                    configPath,
-                );
-                console.log(`Building ${settings.name}`);
-                clang.process(watcher, settings);
-            }
+            let commonBasePath = cwd.join(args[0]).dirname();
+            const watcher = new FileWatcher();
+            defer.push(() => watcher.stop());
+
+            const plugins: BasePlugin[] = [new ClangPlugin(tmp), new CopyPlugin()];
+            const srcExtProtocols = plugins.reduce(
+                (srcExtProtocols, plugin) =>
+                    plugin.provideProtocolExtensions().reduce((prev, ext) => {
+                        prev[ext] = plugin.name();
+                        return prev;
+                    }, Object.assign({}, srcExtProtocols)),
+                {},
+            );
+
+            await Promise.all(
+                args.map(async arg => {
+                    const configPath = cwd.join(arg);
+                    commonBasePath = commonBasePath.commonSubPath(configPath.dirname());
+
+                    const settings = new BuildSettings(opts.mode);
+                    settings.load(
+                        json5.parse(await fs.promises.readFile(configPath.toString(), { encoding: 'utf8' })),
+                        configPath,
+                        srcExtProtocols,
+                    );
+                    console.log(`--- building "${arg}" ---`);
+
+                    await Promise.all(
+                        plugins.map(async plugin => {
+                            const reset = await plugin.process(watcher, settings);
+                            watcher.add(
+                                configPath,
+                                createMailbox(async event => {
+                                    return reset();
+                                }),
+                            );
+                        }),
+                    );
+                }),
+            );
+
+            watcher.start(commonBasePath);
         } catch (err) {
             console.error(err);
         }
