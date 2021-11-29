@@ -1,9 +1,7 @@
 import * as fs from 'fs';
 import * as json5 from 'json5';
-
-import { BuildTargetPlatform, BuildType, RawBuildFile } from './raw';
-
 import { ResolvedPath } from '../util/resolved_path';
+import { BuildTargetPlatform, BuildType, RawBuildFile } from './raw';
 import { Target } from './target';
 
 const KNOWN_TARGETS = ['win32', 'darwin', 'linux', 'wasm'];

@@ -1,6 +1,5 @@
 import * as assert from 'assert';
 import * as path from 'path';
-
 import { ResolvedPath } from '../util/resolved_path';
 
 describe('resolved path', () => {

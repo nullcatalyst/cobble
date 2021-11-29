@@ -1,5 +1,5 @@
-import { BuildTargetPlatform, BuildType, RawBuildFile } from './raw';
 import { ResolvedPath } from '../util/resolved_path';
+import { BuildTargetPlatform, BuildType, RawBuildFile } from './raw';
 import { Target } from './target';
 export declare class BuildSettings {
     private _raw;

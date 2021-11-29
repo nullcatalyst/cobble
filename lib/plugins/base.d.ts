@@ -1,6 +1,6 @@
-import { BaseWatcher } from '../watcher/base';
 import { BuildSettings } from '../composer/settings';
 import { ResolvedPath } from '../util/resolved_path';
+import { BaseWatcher } from '../watcher/base';
 export declare type ResetPluginWatchedFilesFn = () => void;
 export declare class BasePlugin {
     constructor(opts: {

@@ -1,8 +1,7 @@
 import * as assert from 'assert';
 import * as path from 'path';
-
-import { ResolvedPath } from '../util/resolved_path';
 import { Target } from '../composer/target';
+import { ResolvedPath } from '../util/resolved_path';
 
 describe('target', () => {
     it('should parse protocols', async () => {

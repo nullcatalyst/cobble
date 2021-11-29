@@ -1,9 +1,7 @@
 import * as assert from 'assert';
-
-import { Event, EventType } from '../watcher/event';
-
-import { ResolvedPath } from '../util/resolved_path';
 import { createMailbox } from '../util/mailbox';
+import { ResolvedPath } from '../util/resolved_path';
+import { Event, EventType } from '../watcher/event';
 
 describe('mailbox', () => {
     it('should handle being called once', async () => {

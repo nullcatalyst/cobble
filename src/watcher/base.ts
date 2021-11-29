@@ -1,6 +1,5 @@
-import { Event, IN_PROGRESS_EVENT_NAMES } from './event';
-
 import { ResolvedPath } from '../util/resolved_path';
+import { Event, IN_PROGRESS_EVENT_NAMES } from './event';
 
 export type CleanupCallback = () => void;
 

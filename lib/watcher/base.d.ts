@@ -1,5 +1,5 @@
-import { Event } from './event';
 import { ResolvedPath } from '../util/resolved_path';
+import { Event } from './event';
 export declare type CleanupCallback = () => void;
 export declare abstract class BaseWatcher {
     protected _verbosity: number;

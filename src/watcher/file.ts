@@ -1,9 +1,7 @@
 import * as chokidar from 'chokidar';
-
+import { ResolvedPath } from '../util/resolved_path';
 import { BaseWatcher } from './base';
 import { Event, EventType } from './event';
-
-import { ResolvedPath } from '../util/resolved_path';
 
 export class FileWatcher extends BaseWatcher {
     private readonly _watchers: chokidar.FSWatcher[] = [];

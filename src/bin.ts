@@ -1,16 +1,14 @@
+import { Command, Option } from 'commander';
 import * as fs from 'fs';
 import * as json5 from 'json5';
 import * as os from 'os';
 import * as tmpPromise from 'tmp-promise';
-
-import { Command, Option } from 'commander';
-
-import { BasePlugin } from './plugins/base';
 import { BuildSettings } from './composer/settings';
-import { FileWatcher } from './watcher/file';
-import { ResolvedPath } from './util/resolved_path';
+import { BasePlugin } from './plugins/base';
 import { createMailbox } from './util/mailbox';
 import { mkdir } from './util/mkdir';
+import { ResolvedPath } from './util/resolved_path';
+import { FileWatcher } from './watcher/file';
 
 const defer: (() => void)[] = [() => {}];
 const cleanup = (...args) => {
