@@ -5,6 +5,7 @@ export declare class ResolvedPath {
     private readonly _platformPath;
     private constructor();
     static absolute(filePath: string, platformPath?: path.PlatformPath): ResolvedPath;
+    static absoluteForSamePlatform(filePath: string, other: ResolvedPath): ResolvedPath;
     dirname(): ResolvedPath;
     join(to: string): ResolvedPath;
     commonSubPath(other: ResolvedPath): ResolvedPath;

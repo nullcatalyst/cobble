@@ -51,7 +51,7 @@ export class BuildSettings {
         this._basePath = basePath;
         this._outputPath = raw['output']
             ? basePath.join(this._replaceVariables(raw['output']))
-            : basePath.replaceFileName(_createOutputName(this._target, this._type, name));
+            : basePath.join(_createOutputName(this._target, this._type, name));
         this._name = name;
         this._defines = raw['defines'] ?? [];
         this._flags = raw['flags'] ?? [];

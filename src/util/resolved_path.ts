@@ -13,6 +13,10 @@ export class ResolvedPath {
         return new ResolvedPath(platformPath.normalize(filePath), platformPath);
     }
 
+    static absoluteForSamePlatform(filePath: string, other: ResolvedPath): ResolvedPath {
+        return new ResolvedPath(other._platformPath.normalize(filePath), other._platformPath);
+    }
+
     dirname(): ResolvedPath {
         return new ResolvedPath(this._platformPath.dirname(this._filePath), this._platformPath);
     }
