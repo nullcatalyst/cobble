@@ -60,6 +60,7 @@ export function createMailbox(callback: MailboxCallback): MailboxCallback {
         } else {
             mailbox = Mailbox.dependOn(mailbox, event, callback);
         }
+        mailbox.promise.then(() => (mailbox = null));
 
         return mailbox.promise;
     };

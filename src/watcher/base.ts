@@ -29,9 +29,9 @@ export abstract class BaseWatcher {
         }
 
         return Promise.all(
-            callbacks.map(callback => {
+            callbacks.map(async callback => {
                 try {
-                    callback(event);
+                    await callback(event);
                 } catch (err) {
                     console.error(err);
                 }
