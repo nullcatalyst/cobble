@@ -5,7 +5,7 @@ export declare enum EventType {
     DeleteFile = 2,
     BuildFile = 3
 }
-export declare const IN_PROGRESS_EVENT_NAMES: string[];
+export declare const EVENT_NAMES: string[];
 export declare class Event {
     private readonly _type;
     private readonly _filePath;

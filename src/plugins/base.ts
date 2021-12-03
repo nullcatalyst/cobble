@@ -4,8 +4,34 @@ import { BaseWatcher } from '../watcher/base';
 
 export type ResetPluginWatchedFilesFn = () => void;
 
+export interface PluginOptions {
+    'release': boolean;
+    'verbose': number;
+    'tmp': ResolvedPath;
+}
+
 export class BasePlugin {
-    constructor(opts: { 'tmp': ResolvedPath }) {}
+    private readonly _release: boolean;
+    private readonly _verbose: number;
+    private readonly _tmp: ResolvedPath;
+
+    constructor(opts: PluginOptions) {
+        this._release = opts['release'];
+        this._verbose = opts['verbose'];
+        this._tmp = opts['tmp'];
+    }
+
+    get verbose(): number {
+        return this._verbose;
+    }
+
+    get release(): boolean {
+        return this._release;
+    }
+
+    get tmp(): ResolvedPath {
+        return this._tmp;
+    }
 
     name(): string {
         throw new Error('cannot use a plugin without a name');

@@ -1,5 +1,5 @@
 import { ResolvedPath } from '../util/resolved_path';
-import { Event, IN_PROGRESS_EVENT_NAMES } from './event';
+import { Event, EVENT_NAMES } from './event';
 
 export type CleanupCallback = () => void;
 
@@ -17,7 +17,7 @@ export abstract class BaseWatcher {
 
     emit(event: Event): Promise<void> {
         if (this._verbosity > 1) {
-            console.log(`${IN_PROGRESS_EVENT_NAMES[event.type]} ${event.filePath}`);
+            console.log(`[${EVENT_NAMES[event.type]}] ${event.filePath}`);
         }
 
         const callbacks = this._callbacks.get(event.filePath.toString());
@@ -36,7 +36,9 @@ export abstract class BaseWatcher {
                     console.error(err);
                 }
             }),
-        ).then(() => {});
+        ).then(() => {
+            // Do nothing, this just exists to hide the Promise.all() return value
+        });
     }
 
     add(filePath: ResolvedPath, callback: (event: Event) => void): CleanupCallback {

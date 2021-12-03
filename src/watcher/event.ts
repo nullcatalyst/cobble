@@ -7,7 +7,8 @@ export enum EventType {
     BuildFile,
 }
 
-export const IN_PROGRESS_EVENT_NAMES = ['adding', 'changing', 'deleting', 'building'];
+// Used when printing verbose output
+export const EVENT_NAMES = ['ADD', 'CHANGE', 'DELETE', 'BUILD'];
 
 export class Event {
     private readonly _type: EventType;

@@ -67,6 +67,8 @@ program
             const plugins: BasePlugin[] = (opts.plugin as string[]).map(plugin => {
                 const PluginClass = require(`cobble-plugin-${plugin}`).default as typeof BasePlugin;
                 return new PluginClass({
+                    'release': opts.release,
+                    'verbose': opts.verbose,
                     'tmp': tmp,
                 });
             });
