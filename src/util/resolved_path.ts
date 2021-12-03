@@ -1,5 +1,8 @@
 import * as path from 'path';
 
+/**
+ * An immutable, fully-resolved file path.
+ */
 export class ResolvedPath {
     private readonly _filePath: string;
     private readonly _platformPath: path.PlatformPath;
@@ -7,6 +10,32 @@ export class ResolvedPath {
     private constructor(filePath: string, platformPath: path.PlatformPath) {
         this._filePath = filePath;
         this._platformPath = platformPath;
+    }
+
+    toString(): string {
+        return this._filePath;
+    }
+
+    /**
+     * Sometimes backslashes in Windows paths are problematic, this provides a simple way around that common problem.
+     * @returns a string respresentation of the path, with the platform-specific path separator replaced by '/'
+     */
+    toStringWithSlashSep(): string {
+        return this._filePath.replace(this._platformPath.sep, '/');
+    }
+
+    /**
+     * @returns the name of the file, without the extension or the directory
+     */
+    get name(): string {
+        return this._platformPath.parse(this._filePath).name;
+    }
+
+    /**
+     * @returns the extension of the file, without the leading dot
+     */
+    get ext(): string {
+        return this._platformPath.parse(this._filePath).ext.slice(1);
     }
 
     static absolute(filePath: string, platformPath: path.PlatformPath = path): ResolvedPath {
@@ -25,6 +54,12 @@ export class ResolvedPath {
         return new ResolvedPath(this._platformPath.resolve(this._filePath, to), this._platformPath);
     }
 
+    /**
+     * Finds the longest common subpath shared between two paths.
+     * If the two paths are on different platforms (or different drive letters on Windows), then this will throw an error.
+     * @param other the other path to compare with
+     * @returns the longest common subpath shared between the two paths
+     */
     commonSubPath(other: ResolvedPath): ResolvedPath {
         if (this._platformPath !== other._platformPath) {
             throw new Error('cannot compare paths on different platforms');
@@ -84,18 +119,5 @@ export class ResolvedPath {
         }
 
         return this._platformPath.relative(this._filePath.toString(), other._filePath.toString());
-    }
-
-    toString(): string {
-        return this._filePath;
-    }
-
-    get name(): string {
-        return this._platformPath.parse(this._filePath).name;
-    }
-
-    // Returns the extension of the file, without the leading dot
-    get ext(): string {
-        return this._platformPath.parse(this._filePath).ext.slice(1);
     }
 }

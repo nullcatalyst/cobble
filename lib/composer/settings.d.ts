@@ -16,7 +16,7 @@ export declare class BuildSettings {
     constructor(target: BuildTargetPlatform);
     load(raw: RawBuildFile, filePath: ResolvedPath, fileExtProtocols?: {
         [ext: string]: string;
-    }): Promise<void>;
+    }, release?: boolean): Promise<void>;
     get name(): string;
     get basePath(): ResolvedPath;
     get outputPath(): ResolvedPath;

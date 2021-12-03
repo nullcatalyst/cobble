@@ -7,6 +7,12 @@ export interface RawBuildFile extends RawBuildSettings {
     'std'?: BuildStandard;
     'platform'?: RawBuildPlatformSettings;
 }
+/**
+ * Platform-specific build settings.
+ * This property names can be any build platform, eg: `win32`, `darwin`, `linux`, or `wasm`,
+ * or an expression that evaluates to `true` or `false` based on these, eg: `!win32`, `darwin && !wasm`, etc.
+ * The special variable `release` can also be used to determine whether the build is in release mode.
+ */
 export declare type RawBuildPlatformSettings = {
     [platform in BuildTargetPlatform]: RawBuildSettings;
 } | {

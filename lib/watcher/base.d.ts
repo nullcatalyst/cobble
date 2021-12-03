@@ -2,7 +2,7 @@ import { ResolvedPath } from '../util/resolved_path';
 import { Event } from './event';
 export declare type CleanupCallback = () => void;
 export declare abstract class BaseWatcher {
-    protected _verbosity: number;
+    protected readonly _verbosity: number;
     protected readonly _callbacks: Map<string, ((event: Event) => void)[]>;
     constructor(verbosity?: number);
     stop(): void;

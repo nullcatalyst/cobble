@@ -41,6 +41,7 @@ export class BuildSettings {
         raw: RawBuildFile,
         filePath: ResolvedPath,
         fileExtProtocols: { [ext: string]: string } = {},
+        release: boolean = false,
     ): Promise<void> {
         const isString = s => typeof s === 'string';
 
@@ -67,7 +68,7 @@ export class BuildSettings {
 
         const knownPlatforms = KNOWN_TARGETS.reduce(
             (settings, platformName) => ({ ...settings, [platformName]: this._target === platformName }),
-            {},
+            { 'release': release },
         );
 
         for (const [platformName, rawPlatform] of Object.entries(raw['platform'] ?? {})) {
@@ -77,10 +78,11 @@ export class BuildSettings {
 
             if (
                 platformName === this._target ||
+                (platformName === 'release' && release) ||
                 new Function(
                     'platform',
                     // ReferenceError.message takes the form "<name> is not defined"
-                    `with(platform){for(;;){try{return(${platformName});}catch(e){if(e instanceof ReferenceError){platform[e.message.slice(0,e.message.indexOf(' '))]=undefined;}else{throw e;}}}}`,
+                    `with(platform){for(let __retry_count__=0;__retry_count__<10;++__retry_count__){try{return(${platformName});}catch(e){if(e instanceof ReferenceError){platform[e.message.slice(0,e.message.indexOf(' '))]=undefined;}else{throw e;}}}throw new Error('failed to evaluate platform definition for [${platformName}], retried too many times');}`,
                 )(Object.assign({}, knownPlatforms))
             ) {
                 const platformSettings = new BuildSettings(this._target);
