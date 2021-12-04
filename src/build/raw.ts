@@ -5,15 +5,15 @@ export type BuildTargetPlatform = 'win32' | 'darwin' | 'linux' | 'wasm';
 /**
  * The build file, in json format.
  */
-export interface RawBuildFile {
+export type RawBuildFile<T = {}> = {
     'name': string;
     'outDir'?: string;
 
     'srcs'?: string[];
     'deps'?: string[];
 
-    'platform'?: RawBuildPlatformSettings;
-}
+    'platform'?: RawBuildPlatformSettings<T>;
+} & T;
 
 /**
  * Platform-specific build settings.
@@ -22,15 +22,11 @@ export interface RawBuildFile {
  * or an expression that evaluates to `true` or `false` based on these, eg: `!win32`, `darwin && !wasm`, etc.
  * The special variable `release` can also be used to determine whether the build is in release mode.
  */
-type RawBuildPlatformSettings =
-    | { [platform in BuildTargetPlatform]: RawBuildSettings }
-    | { [expr: string]: RawBuildSettings };
+type RawBuildPlatformSettings<T> =
+    | { [platform in BuildTargetPlatform]: RawBuildSettings<T> }
+    | { [expr: string]: RawBuildSettings<T> };
 
-interface RawBuildSettings {
+type RawBuildSettings<T> = {
     'srcs'?: string[];
     'deps'?: string[];
-
-    [pluginName: string]: {
-        [settingName: string]: any;
-    };
-}
+} & T;

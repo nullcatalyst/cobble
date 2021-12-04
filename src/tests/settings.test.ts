@@ -6,15 +6,17 @@ import { ResolvedPath } from '../util/resolved_path';
 
 describe('build settings', () => {
     it('should parse a raw build file', async () => {
-        const raw = {
-            'name': 'test',
-            'outDir': 'out',
-            'srcs': ['copy:src/1.txt', 'copy:src/2.txt'],
-            'deps': ['other/build.json'],
-        };
-        const settings = await BuildSettings.from(raw, {
-            'basePath': ResolvedPath.absolute('/', path.posix),
-        });
+        const settings = await BuildSettings.from(
+            {
+                'name': 'test',
+                'outDir': 'out',
+                'srcs': ['copy:src/1.txt', 'copy:src/2.txt'],
+                'deps': ['other/build.json'],
+            },
+            {
+                'basePath': ResolvedPath.absolute('/', path.posix),
+            },
+        );
 
         expect(settings.name).to.equal('test');
         expect(settings.outDir.toString()).to.equal('/out');
@@ -23,30 +25,32 @@ describe('build settings', () => {
     });
 
     it('should merge platform specific properties', async () => {
-        const raw = {
-            'name': 'platform_test',
-            'outDir': 'out',
-            'srcs': ['copy:src/1.txt', 'copy:src/2.txt'],
-            'deps': ['other/build.json'],
-            'platform': {
-                'wasm': {
-                    'srcs': ['copy:src/wasm.txt'],
-                    'deps': ['other/wasm.json'],
-                },
-                'win32': {
-                    'srcs': ['copy:src/win32.txt'],
-                    'deps': ['other/win32.json'],
-                },
-                '!darwin': {
-                    'srcs': ['copy:src/not_darwin.txt'],
-                    'deps': ['other/not_darwin.json'],
+        const settings = await BuildSettings.from(
+            {
+                'name': 'platform_test',
+                'outDir': 'out',
+                'srcs': ['copy:src/1.txt', 'copy:src/2.txt'],
+                'deps': ['other/build.json'],
+                'platform': {
+                    'wasm': {
+                        'srcs': ['copy:src/wasm.txt'],
+                        'deps': ['other/wasm.json'],
+                    },
+                    'win32': {
+                        'srcs': ['copy:src/win32.txt'],
+                        'deps': ['other/win32.json'],
+                    },
+                    '!darwin': {
+                        'srcs': ['copy:src/not_darwin.txt'],
+                        'deps': ['other/not_darwin.json'],
+                    },
                 },
             },
-        };
-        const settings = await BuildSettings.from(raw, {
-            'basePath': ResolvedPath.absolute('/', path.posix),
-            'target': 'wasm',
-        });
+            {
+                'basePath': ResolvedPath.absolute('/', path.posix),
+                'target': 'wasm',
+            },
+        );
 
         expect(settings.name).to.equal('platform_test');
         expect(settings.outDir.toString()).to.equal('/out');
@@ -64,34 +68,36 @@ describe('build settings', () => {
     });
 
     it('should merge platform specific plugin properties', async () => {
-        const raw = {
-            'name': 'clang_test',
-            'clang': {
-                'libs': ['lib1', 'lib2'],
+        const settings = await BuildSettings.from(
+            {
+                'name': 'clang_test',
+                'clang': {
+                    'libs': ['lib1', 'lib2'],
+                },
+                'platform': {
+                    'wasm': {
+                        'clang': {
+                            'libs': ['wasm_lib3'],
+                        },
+                    },
+                    'win32': {
+                        'clang': {
+                            'libs': ['win32_lib3'],
+                        },
+                    },
+                    '!darwin': {
+                        'clang': {
+                            'libs': ['not_darwin_lib3'],
+                        },
+                    },
+                },
             },
-            'platform': {
-                'wasm': {
-                    'clang': {
-                        'libs': ['wasm_lib3'],
-                    },
-                },
-                'win32': {
-                    'clang': {
-                        'libs': ['win32_lib3'],
-                    },
-                },
-                '!darwin': {
-                    'clang': {
-                        'libs': ['not_darwin_lib3'],
-                    },
-                },
+            {
+                'basePath': ResolvedPath.absolute('/', path.posix),
+                'target': 'wasm',
+                'pluginNames': ['clang'],
             },
-        };
-        const settings = await BuildSettings.from(raw, {
-            'basePath': ResolvedPath.absolute('/', path.posix),
-            'target': 'wasm',
-            'pluginNames': ['clang'],
-        });
+        );
 
         expect(settings.name).to.equal('clang_test');
         expect(settings.outDir.toString()).to.equal('/');

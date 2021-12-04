@@ -56,8 +56,8 @@ export class BuildSettings {
         return BuildSettings.from(raw, opts);
     }
 
-    static async from(
-        raw: RawBuildFile,
+    static async from<T = {}>(
+        raw: RawBuildFile<T>,
         opts?: Partial<Options & { 'basePath': ResolvedPath }>,
     ): Promise<BuildSettings> {
         opts = opts ?? {};

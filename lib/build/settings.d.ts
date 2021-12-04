@@ -26,7 +26,7 @@ export declare class BuildSettings {
     private _pluginSettings;
     private constructor();
     static load(filePath: ResolvedPath, opts?: Partial<Options>): Promise<BuildSettings>;
-    static from(raw: RawBuildFile, opts?: Partial<Options & {
+    static from<T = {}>(raw: RawBuildFile<T>, opts?: Partial<Options & {
         'basePath': ResolvedPath;
     }>): Promise<BuildSettings>;
     get name(): string;
