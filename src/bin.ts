@@ -85,7 +85,7 @@ program
                         'release': opts.release,
                         'target': opts.mode,
                         'fileExtProtocols': srcExtProtocols,
-                        'pluginNames': opts.plugin,
+                        'pluginNames': plugins.map(plugin => plugin.name()),
                     });
                     console.log(`--- building "${arg}" ---`);
 
