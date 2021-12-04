@@ -1,10 +1,9 @@
-import { BuildSettings } from '../composer/settings';
-import { Target } from '../composer/target';
+import { BuildSettings } from '../build/settings';
+import { Target } from '../build/target';
 import { ResolvedPath } from '../util/resolved_path';
 import { BaseWatcher } from '../watcher/base';
 export declare type ResetPluginWatchedFilesFn = () => void;
 export interface PluginOptions {
-    'release': boolean;
     'verbose': number;
     'tmp': ResolvedPath;
 }

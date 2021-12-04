@@ -21,6 +21,7 @@ export declare class ResolvedPath {
      * @returns the extension of the file, without the leading dot
      */
     get ext(): string;
+    static cwd(): ResolvedPath;
     static absolute(filePath: string, platformPath?: path.PlatformPath): ResolvedPath;
     static absoluteForSamePlatform(filePath: string, other: ResolvedPath): ResolvedPath;
     dirname(): ResolvedPath;

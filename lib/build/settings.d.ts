@@ -25,7 +25,9 @@ export declare class BuildSettings {
     private _pluginSettings;
     private constructor();
     static load(filePath: ResolvedPath, opts?: Partial<Options>): Promise<BuildSettings>;
-    static from(raw: RawBuildFile, opts?: Partial<Options>, basePath?: ResolvedPath): Promise<BuildSettings>;
+    static from(raw: RawBuildFile, opts?: Partial<Options & {
+        'basePath': ResolvedPath;
+    }>): Promise<BuildSettings>;
     get name(): string;
     get basePath(): ResolvedPath;
     get outDir(): ResolvedPath;
@@ -34,7 +36,7 @@ export declare class BuildSettings {
     get srcs(): Target[];
     get deps(): ResolvedPath[];
     get raw(): any;
-    pluginSettings(pluginName: string): MapLike<any>;
+    pluginSettings(pluginName: string): MapLike<any> | undefined;
 }
 interface MapLike<T> {
     [key: string]: T;

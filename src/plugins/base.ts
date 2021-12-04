@@ -1,12 +1,11 @@
-import { BuildSettings } from '../composer/settings';
-import { Target } from '../composer/target';
+import { BuildSettings } from '../build/settings';
+import { Target } from '../build/target';
 import { ResolvedPath } from '../util/resolved_path';
 import { BaseWatcher } from '../watcher/base';
 
 export type ResetPluginWatchedFilesFn = () => void;
 
 export interface PluginOptions {
-    'release': boolean;
     'verbose': number;
     'tmp': ResolvedPath;
 }
@@ -17,7 +16,6 @@ export class BasePlugin {
     private readonly _tmpPath: ResolvedPath;
 
     constructor(opts: PluginOptions) {
-        this._release = opts['release'];
         this._verbose = opts['verbose'];
         this._tmpPath = opts['tmp'];
     }

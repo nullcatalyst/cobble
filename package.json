@@ -1,33 +1,35 @@
 {
-  "name": "cobble",
-  "version": "0.1.0",
-  "description": "",
-  "main": "lib/index.js",
-  "bin": "bin/cobble",
-  "scripts": {
-    "build": "tsc",
-    "test": "mocha --require ts-node/register --extensions ts 'src/tests/**/*.ts'",
-    "test-watch": "mocha --require ts-node/register --extensions ts --watch --watch-files src 'src/tests/**/*.ts'",
-    "test-coverage": "nyc --reporter=html mocha --require ts-node/register --extensions ts 'src/tests/**/*.ts'",
-    "example": "ts-node src/bin.ts build example/build.json"
-  },
-  "author": {
-    "name": "Scott Bennett",
-    "email": "scottbennett912@gmail.com"
-  },
-  "license": "MIT",
-  "devDependencies": {
-    "@types/mocha": "^9.0.0",
-    "@types/node": "^16.11.10",
-    "mocha": "^9.1.3",
-    "nyc": "^15.1.0",
-    "ts-node": "^10.4.0",
-    "typescript": "^4.5.2"
-  },
-  "dependencies": {
-    "chokidar": "^3.5.2",
-    "commander": "^8.3.0",
-    "json5": "^2.2.0",
-    "tmp-promise": "^3.0.3"
-  }
+    "name": "cobble",
+    "version": "0.2.0",
+    "description": "",
+    "main": "lib/index.js",
+    "bin": "bin/cobble",
+    "scripts": {
+        "build": "tsc",
+        "test": "mocha --require ts-node/register --extensions ts 'src/tests/**/*.ts'",
+        "test-watch": "mocha --require ts-node/register --extensions ts --watch --watch-files src 'src/tests/**/*.ts'",
+        "test-coverage": "nyc --reporter=html mocha --require ts-node/register --extensions ts 'src/tests/**/*.ts'",
+        "example": "ts-node src/bin.ts build example/build.json"
+    },
+    "author": {
+        "name": "Scott Bennett",
+        "email": "scottbennett912@gmail.com"
+    },
+    "license": "MIT",
+    "devDependencies": {
+        "@types/chai": "^4.2.22",
+        "@types/mocha": "^9.0.0",
+        "@types/node": "^16.11.10",
+        "chai": "^4.3.4",
+        "mocha": "^9.1.3",
+        "nyc": "^15.1.0",
+        "ts-node": "^10.4.0",
+        "typescript": "^4.5.2"
+    },
+    "dependencies": {
+        "chokidar": "^3.5.2",
+        "commander": "^8.3.0",
+        "json5": "^2.2.0",
+        "tmp-promise": "^3.0.3"
+    }
 }

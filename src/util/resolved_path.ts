@@ -38,6 +38,10 @@ export class ResolvedPath {
         return this._platformPath.parse(this._filePath).ext.slice(1);
     }
 
+    static cwd(): ResolvedPath {
+        return new ResolvedPath(process.cwd(), path);
+    }
+
     static absolute(filePath: string, platformPath: path.PlatformPath = path): ResolvedPath {
         return new ResolvedPath(platformPath.normalize(filePath), platformPath);
     }

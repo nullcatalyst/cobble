@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import * as path from 'path';
-import { Target } from '../composer/target';
+import { Target } from '../build/target';
 import { ResolvedPath } from '../util/resolved_path';
 
 describe('target', () => {

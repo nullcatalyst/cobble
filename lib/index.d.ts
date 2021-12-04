@@ -1,5 +1,5 @@
-export * from './composer/settings';
-export * from './composer/target';
+export * from './build/settings';
+export * from './build/target';
 export * from './plugins/base';
 export * from './util/mailbox';
 export * from './util/mkdir';

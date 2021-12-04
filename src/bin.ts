@@ -1,9 +1,7 @@
 import { Command, Option } from 'commander';
-import * as fs from 'fs';
-import * as json5 from 'json5';
 import * as os from 'os';
 import * as tmpPromise from 'tmp-promise';
-import { BuildSettings } from './composer/settings';
+import { BuildSettings } from './build/settings';
 import { BasePlugin } from './plugins/base';
 import { createMailbox } from './util/mailbox';
 import { mkdir } from './util/mkdir';
@@ -67,7 +65,6 @@ program
             const plugins: BasePlugin[] = (opts.plugin as string[]).map(plugin => {
                 const PluginClass = require(`cobble-plugin-${plugin}`).default as typeof BasePlugin;
                 return new PluginClass({
-                    'release': opts.release,
                     'verbose': opts.verbose,
                     'tmp': tmp,
                 });
@@ -86,12 +83,12 @@ program
                     const configPath = cwd.join(arg);
                     commonBasePath = commonBasePath.commonSubPath(configPath.dirname());
 
-                    const settings = new BuildSettings(opts.mode);
-                    settings.load(
-                        json5.parse(await fs.promises.readFile(configPath.toString(), { encoding: 'utf8' })),
-                        configPath,
-                        srcExtProtocols,
-                    );
+                    const settings = await BuildSettings.load(configPath, {
+                        'release': opts.release,
+                        'target': opts.mode,
+                        'fileExtProtocols': srcExtProtocols,
+                        'pluginNames': opts.plugin,
+                    });
                     console.log(`--- building "${arg}" ---`);
 
                     await Promise.all(
