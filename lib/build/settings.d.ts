@@ -18,9 +18,9 @@ export declare class BuildSettings {
     private _basePath;
     /** The name as defined in the build file. This may be used to create the output file name if no other output name is given. */
     private _name;
-    private _outDirPath;
     private _target;
     private _release;
+    private _outDirPath;
     private _srcs;
     private _deps;
     private _pluginSettings;

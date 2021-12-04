@@ -27,9 +27,9 @@ export class BuildSettings {
 
     /** The name as defined in the build file. This may be used to create the output file name if no other output name is given. */
     private _name: string;
-    private _outDirPath: ResolvedPath;
     private _target: BuildTargetPlatform;
     private _release: boolean;
+    private _outDirPath: ResolvedPath;
 
     private _srcs: Target[];
     private _deps: ResolvedPath[];
@@ -42,6 +42,7 @@ export class BuildSettings {
         this._name = '';
         this._target = target;
         this._release = release;
+        this._outDirPath = this._basePath;
 
         this._srcs = [];
         this._deps = [];
@@ -74,6 +75,8 @@ export class BuildSettings {
         settings._basePath = basePath;
 
         settings._name = raw['name'];
+        settings._target = target;
+        settings._release = release;
         settings._outDirPath = raw['outDir']
             ? basePath.join(_replaceVariables(raw['outDir'], replaceVariables))
             : basePath;
@@ -193,37 +196,6 @@ function _replaceVariables(s: string, variableMap: { [key: string]: (arg?: strin
         return match;
     });
 }
-
-// const variableMap = {
-//     'TARGET': () => settings._target,
-//     'LIB': name => {
-//         switch (this._target) {
-//             case 'win32':
-//                 return `${name}.lib`;
-//             default:
-//                 return `lib${name}.a`;
-//         }
-//     },
-//     'EXE': name => {
-//         switch (this._target) {
-//             case 'win32':
-//                 return `${name}.exe`;
-//             default:
-//                 return name;
-//         }
-//     },
-// };
-
-// function _createOutputName(target: BuildTargetPlatform, type: BuildType, name: string): string {
-//     switch (target) {
-//         case 'win32':
-//             return `${name}.${type}`;
-//         case 'wasm':
-//             return `${type === 'lib' ? 'lib' : ''}${name}.wasm`;
-//         default:
-//             return `${type === 'lib' ? 'lib' : ''}${name}${type === 'lib' ? '.a' : ''}`;
-//     }
-// }
 
 interface MapLike<T> {
     [key: string]: T;
