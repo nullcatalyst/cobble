@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as json5 from 'json5';
 import * as os from 'os';
+import { BasePlugin } from '..';
 import { ResolvedPath } from '../util/resolved_path';
 import { BuildTargetPlatform, RawBuildFile } from './raw';
 import { Target } from './target';
@@ -167,8 +168,13 @@ export class BuildSettings {
         return this._raw;
     }
 
-    pluginSettings(pluginName: string): MapLike<any> | undefined {
-        return this._pluginSettings[pluginName];
+    pluginSettings<T>(plugin: BasePlugin): Partial<T> {
+        const name = plugin.name();
+        if (!(name in this._pluginSettings)) {
+            throw new Error(`plugin [${plugin.name()}] is not defined in this build file`);
+        }
+
+        return this._pluginSettings[name] as Partial<T>;
     }
 }
 

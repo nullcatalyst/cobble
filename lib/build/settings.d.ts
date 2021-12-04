@@ -1,3 +1,4 @@
+import { BasePlugin } from '..';
 import { ResolvedPath } from '../util/resolved_path';
 import { BuildTargetPlatform, RawBuildFile } from './raw';
 import { Target } from './target';
@@ -36,7 +37,7 @@ export declare class BuildSettings {
     get srcs(): Target[];
     get deps(): ResolvedPath[];
     get raw(): any;
-    pluginSettings(pluginName: string): MapLike<any> | undefined;
+    pluginSettings<T>(plugin: BasePlugin): Partial<T>;
 }
 interface MapLike<T> {
     [key: string]: T;

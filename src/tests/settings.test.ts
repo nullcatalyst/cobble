@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import * as path from 'path';
+import { BasePlugin } from '..';
 import { BuildSettings } from '../build/settings';
 import { ResolvedPath } from '../util/resolved_path';
 
@@ -95,7 +96,13 @@ describe('build settings', () => {
         expect(settings.name).to.equal('clang_test');
         expect(settings.outDir.toString()).to.equal('/');
 
-        const clang = settings.pluginSettings('clang');
+        class FakePlugin extends BasePlugin {
+            override name(): string {
+                return 'clang';
+            }
+        }
+
+        const clang = settings.pluginSettings(new FakePlugin({} as any));
         expect(clang).to.have.property('libs');
         expect(clang['libs']).to.deep.equal(['lib1', 'lib2', 'wasm_lib3', 'not_darwin_lib3']);
     });
