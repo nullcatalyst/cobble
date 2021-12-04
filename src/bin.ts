@@ -1,8 +1,10 @@
 import { Command, Option } from 'commander';
+import * as fs from 'fs';
 import * as os from 'os';
+import * as path from 'path';
 import * as tmpPromise from 'tmp-promise';
 import { BuildSettings } from './build/settings';
-import { BasePlugin } from './plugins/base';
+import { BasePlugin, PluginOptions } from './plugins/base';
 import { createMailbox } from './util/mailbox';
 import { mkdir } from './util/mkdir';
 import { ResolvedPath } from './util/resolved_path';
@@ -30,15 +32,6 @@ program
     .argument('<config...>')
     .option('--release', 'build the release version', false)
     .option('-t, --tmp <directory>', 'temporary directory to output intermediate build files to', '')
-    .option(
-        '-p, --plugin <plugin>',
-        'list of plugins to use',
-        (value, prev) => {
-            prev.push(value);
-            return prev;
-        },
-        [],
-    )
     .addOption(
         new Option('-m, --mode <mode>', 'target to build for')
             .choices(['win32', 'darwin', 'linux', 'wasm'])
@@ -62,13 +55,13 @@ program
             const watcher = new FileWatcher();
             defer.push(() => watcher.stop());
 
-            const plugins: BasePlugin[] = (opts.plugin as string[]).map(plugin => {
-                const PluginClass = require(`cobble-plugin-${plugin}`).default as typeof BasePlugin;
-                return new PluginClass({
+            const plugins = await loadPlugins(
+                {
                     'verbose': opts.verbose,
                     'tmp': tmp,
-                });
-            });
+                },
+                opts.verbose,
+            );
             const srcExtProtocols = plugins.reduce(
                 (srcExtProtocols, plugin) =>
                     plugin.provideProtocolExtensions().reduce((prev, ext) => {
@@ -77,6 +70,11 @@ program
                     }, Object.assign({}, srcExtProtocols)),
                 {},
             );
+            if (opts.verbose >= 2) {
+                for (const ext in srcExtProtocols) {
+                    console.log(`[EXT] "${ext}" => "${srcExtProtocols[ext]}"`);
+                }
+            }
 
             await Promise.all(
                 args.map(async arg => {
@@ -111,3 +109,15 @@ program
         }
     })
     .parse(process.argv.slice(1));
+
+async function loadPlugins(opts: PluginOptions, verbose: number): Promise<BasePlugin[]> {
+    const plugins = await fs.promises.readdir(path.resolve(__dirname, '..'));
+    return plugins
+        .filter(plugin => plugin.startsWith('cobble-plugin-'))
+        .map(plugin => {
+            if (verbose >= 2) {
+                console.log(`[LOAD] "${plugin}"`);
+            }
+            return new (require(plugin) as typeof BasePlugin)(Object.assign({}, opts));
+        });
+}
