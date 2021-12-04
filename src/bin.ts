@@ -111,13 +111,15 @@ program
     .parse(process.argv.slice(1));
 
 async function loadPlugins(opts: PluginOptions, verbose: number): Promise<BasePlugin[]> {
-    const plugins = await fs.promises.readdir(path.resolve(__dirname, '..'));
+    const plugins = await fs.promises.readdir(path.resolve(__dirname, '../..'));
     return plugins
         .filter(plugin => plugin.startsWith('cobble-plugin-'))
         .map(plugin => {
             if (verbose >= 2) {
                 console.log(`[LOAD] "${plugin}"`);
             }
-            return new (require(plugin) as typeof BasePlugin)(Object.assign({}, opts));
+
+            const module = require(plugin);
+            return new ((module.default ?? module) as typeof BasePlugin)(Object.assign({}, opts));
         });
 }

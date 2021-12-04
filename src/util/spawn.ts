@@ -11,6 +11,9 @@ export function spawn(command: string, args: string[], options?: childProcess.Sp
         const stderr: string[] = [];
 
         const process = childProcess.spawn(command, args, options);
+        process.on('error', err => {
+            reject(err);
+        });
         process.on('exit', code => {
             if (code === 0) {
                 resolve({
