@@ -9,8 +9,7 @@
         "preinstall": "npm run build",
         "test": "mocha --require ts-node/register --extensions ts 'src/tests/**/*.ts'",
         "test-watch": "mocha --require ts-node/register --extensions ts --watch --watch-files src 'src/tests/**/*.ts'",
-        "test-coverage": "nyc --reporter=html mocha --require ts-node/register --extensions ts 'src/tests/**/*.ts'",
-        "example": "ts-node src/bin.ts build example/build.json"
+        "test-coverage": "nyc --reporter=html mocha --require ts-node/register --extensions ts 'src/tests/**/*.ts'"
     },
     "author": {
         "name": "Scott Bennett",

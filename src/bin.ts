@@ -9,7 +9,7 @@ import { BasePlugin, PluginOptions } from './plugins/base';
 import { createMailbox } from './util/mailbox';
 import { mkdir } from './util/mkdir';
 import { ResolvedPath } from './util/resolved_path';
-import { EventType } from './watcher/event';
+import { Event, EventType } from './watcher/event';
 import { FileWatcher } from './watcher/file';
 
 const defer: (() => void)[] = [() => {}];
@@ -94,7 +94,7 @@ program
             );
 
             // Initialize all of the plugins, passing them each of the build settings
-            await Promise.all(
+            const settingsList = await Promise.all(
                 configs.map(async arg => {
                     const configPath = cwd.join(arg);
                     const settings = await BuildSettings.load(configPath, {
@@ -120,6 +120,8 @@ program
                             );
                         }),
                     );
+
+                    return settings;
                 }),
             );
 
@@ -127,8 +129,22 @@ program
                 console.log(`[WATCH] ${commonBasePath}`);
             }
             watcher.start(commonBasePath);
+
+            // Check if any explicit srcs do not exist under the common base path
+            // If they aren't, then send a single event to the watcher to build, it's the only one they're going to get
+            for (const settings of settingsList) {
+                for (const src of settings.srcs) {
+                    if (!src.path.toString().startsWith(commonBasePath.toString())) {
+                        if (opts.verbose >= 2) {
+                            console.log(`[WARN] ${src} does not exist under ${commonBasePath} and will not be watched`);
+                        }
+                        watcher.emit(new Event(EventType.AddFile, src.path));
+                    }
+                }
+            }
         } catch (err) {
             console.error(err);
+            process.exit(1);
         }
     })
     .parse();
