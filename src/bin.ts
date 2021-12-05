@@ -136,7 +136,9 @@ program
                 for (const src of settings.srcs) {
                     if (!src.path.toString().startsWith(commonBasePath.toString())) {
                         if (opts.verbose >= 2) {
-                            console.log(`[WARN] ${src} does not exist under ${commonBasePath} and will not be watched`);
+                            console.log(
+                                `[WARN] "${src.path}" does not exist under "${commonBasePath}" and will not be watched`,
+                            );
                         }
                         watcher.emit(new Event(EventType.AddFile, src.path));
                     }

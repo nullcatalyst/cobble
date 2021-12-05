@@ -25,6 +25,13 @@ export class ResolvedPath {
     }
 
     /**
+     * @returns the name of the file, including the file extension if it has one
+     */
+    get basename(): string {
+        return this._platformPath.basename(this._filePath);
+    }
+
+    /**
      * @returns the name of the file, without the extension or the directory
      */
     get name(): string {
