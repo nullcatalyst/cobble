@@ -1,4 +1,4 @@
-import * as assert from 'assert';
+import { expect } from 'chai';
 import * as path from 'path';
 import { ResolvedPath } from '../util/resolved_path';
 
@@ -11,25 +11,25 @@ describe('resolved path', () => {
 
     it('should normalize absolute paths', async () => {
         const abs = ResolvedPath.absolute('//test/./normalizing////this path', path.posix);
-        assert.strictEqual(abs.toString(), '/test/normalizing/this path');
+        expect(abs.toString()).to.equal('/test/normalizing/this path');
     });
 
     it('should support joining relative paths', async () => {
         const abs = ResolvedPath.absolute('/absolute/path', path.posix);
         const rel = abs.join('to/relative');
-        assert.strictEqual(rel.toString(), '/absolute/path/to/relative');
+        expect(rel.toString()).to.equal('/absolute/path/to/relative');
     });
 
     it('should be able to return the base name', async () => {
         const abs = ResolvedPath.absolute('/absolute/path', path.posix);
-        assert.strictEqual(abs.name, 'path');
+        expect(abs.name).to.equal('path');
     });
 
     it('should be able to change the file name', async () => {
         const a = ResolvedPath.absolute('/absolute/path', path.posix);
         const b = a.modifyFileName(() => 'new_name');
-        assert.strictEqual(b.name, 'new_name');
-        assert.strictEqual(b.toString(), '/absolute/new_name');
+        expect(b.name).to.equal('new_name');
+        expect(b.toString()).to.equal('/absolute/new_name');
     });
 
     it('should find common posix subpaths', async () => {
@@ -38,17 +38,17 @@ describe('resolved path', () => {
         const c = ResolvedPath.absolute('/no/common/subpath', path.posix);
 
         // Same path
-        assert.strictEqual(a.commonSubPath(a).toString(), '/path/to/a');
+        expect(a.commonSubPath(a).toString()).to.equal('/path/to/a');
 
         // Typical use case
-        assert.strictEqual(a.commonSubPath(b).toString(), '/path/to');
+        expect(a.commonSubPath(b).toString()).to.equal('/path/to');
         // Should be the same regardless of order
-        assert.strictEqual(b.commonSubPath(a).toString(), '/path/to');
+        expect(b.commonSubPath(a).toString()).to.equal('/path/to');
 
         // No common subpath (return root)
-        assert.strictEqual(a.commonSubPath(c).toString(), '/');
+        expect(a.commonSubPath(c).toString()).to.equal('/');
         // No common subpath (return root)
-        assert.strictEqual(c.commonSubPath(a).toString(), '/');
+        expect(c.commonSubPath(a).toString()).to.equal('/');
     });
 
     it('should find common win32 subpaths', async () => {
@@ -58,18 +58,18 @@ describe('resolved path', () => {
         const d = ResolvedPath.absolute('D:\\different\\drive', path.win32);
 
         // Same path
-        assert.strictEqual(a.commonSubPath(a).toString(), 'C:\\path\\to\\a');
+        expect(a.commonSubPath(a).toString()).to.equal('C:\\path\\to\\a');
 
         // Typical use case
-        assert.strictEqual(a.commonSubPath(b).toString(), 'C:\\path\\to');
+        expect(a.commonSubPath(b).toString()).to.equal('C:\\path\\to');
         // Should be the same regardless of order
-        assert.strictEqual(b.commonSubPath(a).toString(), 'C:\\path\\to');
+        expect(b.commonSubPath(a).toString()).to.equal('C:\\path\\to');
 
         // No common subpath (return root)
-        assert.strictEqual(a.commonSubPath(c).toString(), 'C:\\');
-        assert.strictEqual(c.commonSubPath(a).toString(), 'C:\\');
+        expect(a.commonSubPath(c).toString()).to.equal('C:\\');
+        expect(c.commonSubPath(a).toString()).to.equal('C:\\');
 
         // Different drive letters shouold throw an exception
-        assert.throws(() => a.commonSubPath(d));
+        expect(() => a.commonSubPath(d)).to.throw();
     });
 });

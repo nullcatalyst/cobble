@@ -8,6 +8,7 @@ import { BasePlugin, PluginOptions } from './plugins/base';
 import { createMailbox } from './util/mailbox';
 import { mkdir } from './util/mkdir';
 import { ResolvedPath } from './util/resolved_path';
+import { EventType } from './watcher/event';
 import { FileWatcher } from './watcher/file';
 
 const defer: (() => void)[] = [() => {}];
@@ -25,11 +26,12 @@ process.on('SIGINT', cleanup);
 process.on('SIGKILL', cleanup);
 
 const program = new Command();
-program.version('0.1.0').option('-v, --verbose', 'enable verbose logging', (_, prev) => prev + 1, 0);
+program.version('0.2.0');
 program
-    .command('build')
-    .description('build the project from scratch')
+    .command('watch')
+    .description('build and watch the project for changes, rebuilding as necessary')
     .argument('<config...>')
+    .option('-v, --verbose', 'enable verbose logging', (_, prev) => prev + 1, 0)
     .option('--release', 'build the release version', false)
     .option('-t, --tmp <directory>', 'temporary directory to output intermediate build files to', '')
     .addOption(
@@ -51,8 +53,7 @@ program
 
             await mkdir(tmp);
 
-            let commonBasePath = cwd.join(args[0]).dirname();
-            const watcher = new FileWatcher();
+            const watcher = new FileWatcher(opts.verbose);
             defer.push(() => watcher.stop());
 
             const plugins = await loadPlugins(
@@ -76,11 +77,16 @@ program
                 }
             }
 
+            // Calculate the longest common subpath shared by all the config files
+            const commonBasePath = args.reduce(
+                (prev, arg) => prev.commonSubPath(cwd.join(arg).dirname()),
+                cwd.join(args[0]).dirname(),
+            );
+
+            // Initialize all of the plugins, passing them each of the build settings
             await Promise.all(
                 args.map(async arg => {
                     const configPath = cwd.join(arg);
-                    commonBasePath = commonBasePath.commonSubPath(configPath.dirname());
-
                     const settings = await BuildSettings.load(configPath, {
                         'release': opts.release,
                         'target': opts.mode,
@@ -89,12 +95,16 @@ program
                     });
                     console.log(`--- building "${arg}" ---`);
 
+                    // Tell all of the plugins about this build file
                     await Promise.all(
                         plugins.map(async plugin => {
                             const reset = await plugin.process(watcher, settings);
                             watcher.add(
                                 configPath,
                                 createMailbox(async event => {
+                                    if (event.type === EventType.AddFile) {
+                                        return;
+                                    }
                                     return reset();
                                 }),
                             );
@@ -103,12 +113,15 @@ program
                 }),
             );
 
+            if (opts.verbose >= 1) {
+                console.log(`[WATCH] ${commonBasePath}`);
+            }
             watcher.start(commonBasePath);
         } catch (err) {
             console.error(err);
         }
     })
-    .parse(process.argv.slice(1));
+    .parse();
 
 async function loadPlugins(opts: PluginOptions, verbose: number): Promise<BasePlugin[]> {
     const plugins = await fs.promises.readdir(path.resolve(__dirname, '../..'));

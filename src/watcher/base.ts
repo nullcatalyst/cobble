@@ -4,25 +4,21 @@ import { Event, EVENT_NAMES } from './event';
 export type CleanupCallback = () => void;
 
 export abstract class BaseWatcher {
-    protected readonly _verbosity: number;
+    protected readonly _verbose: number;
     protected readonly _callbacks = new Map<string, ((event: Event) => void)[]>();
 
-    constructor(verbosity: number = 0) {
-        this._verbosity = verbosity;
-    }
-
-    stop(): void {
-        // Do nothing
+    constructor(verbose: number) {
+        this._verbose = verbose;
     }
 
     emit(event: Event): Promise<void> {
-        if (this._verbosity >= 1) {
+        if (this._verbose >= 1) {
             console.log(`[${EVENT_NAMES[event.type]}] ${event.filePath}`);
         }
 
         const callbacks = this._callbacks.get(event.filePath.toString());
         if (callbacks == null) {
-            if (this._verbosity >= 2) {
+            if (this._verbose >= 2) {
                 console.log(`[WARN] no callbacks for ${event.filePath}`);
             }
             return;

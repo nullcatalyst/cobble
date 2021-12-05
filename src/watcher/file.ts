@@ -22,7 +22,7 @@ export class FileWatcher extends BaseWatcher {
         this._watchers.push(watcher);
     }
 
-    override stop(): void {
+    stop(): void {
         for (const watcher of this._watchers) {
             watcher.close();
         }
