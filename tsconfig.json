@@ -4,6 +4,7 @@
         "target": "ES2021",
         "rootDir": "src",
         "outDir": "lib",
+        "sourceMap": true,
         "declaration": true
     },
     "include": ["src/**/*.ts"],

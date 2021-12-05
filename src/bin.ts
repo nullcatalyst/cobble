@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as tmpPromise from 'tmp-promise';
+import { BuildTargetPlatform } from '.';
 import { BuildSettings } from './build/settings';
 import { BasePlugin, PluginOptions } from './plugins/base';
 import { createMailbox } from './util/mailbox';
@@ -30,18 +31,26 @@ program.version('0.2.0');
 program
     .command('watch')
     .description('build and watch the project for changes, rebuilding as necessary')
-    .argument('<config...>')
+    .requiredOption('-c, --config <config>', 'temporary directory to output intermediate build files to', '')
     .option('-v, --verbose', 'enable verbose logging', (_, prev) => prev + 1, 0)
-    .option('--release', 'build the release version', false)
     .option('-t, --tmp <directory>', 'temporary directory to output intermediate build files to', '')
+    .option('--release', 'build the release version', false)
     .addOption(
         new Option('-m, --mode <mode>', 'target to build for')
             .choices(['win32', 'darwin', 'linux', 'wasm'])
             .default(os.platform()),
     )
-    .action(async function (this: Command, args: string[]) {
+    .action(async function (this: Command) {
+        interface WatchOptions {
+            config: string;
+            verbose: number;
+            tmp: string;
+            release: boolean;
+            mode: BuildTargetPlatform;
+        }
+
         try {
-            const opts = Object.assign({}, this.opts());
+            const opts = Object.assign({}, this.opts<WatchOptions>());
             if (opts.tmp === '') {
                 const { path, cleanup } = await tmpPromise.dir({ unsafeCleanup: true });
                 defer.push(cleanup);
@@ -78,14 +87,15 @@ program
             }
 
             // Calculate the longest common subpath shared by all the config files
-            const commonBasePath = args.reduce(
+            const configs = [opts.config];
+            const commonBasePath = configs.reduce(
                 (prev, arg) => prev.commonSubPath(cwd.join(arg).dirname()),
-                cwd.join(args[0]).dirname(),
+                cwd.join(configs[0]).dirname(),
             );
 
             // Initialize all of the plugins, passing them each of the build settings
             await Promise.all(
-                args.map(async arg => {
+                configs.map(async arg => {
                     const configPath = cwd.join(arg);
                     const settings = await BuildSettings.load(configPath, {
                         'release': opts.release,
