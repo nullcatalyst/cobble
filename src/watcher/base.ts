@@ -29,7 +29,9 @@ export abstract class BaseWatcher {
                 try {
                     await callback(event);
                 } catch (err) {
-                    console.error(err);
+                    if (this._verbose >= 0) {
+                        console.error(err);
+                    }
                 }
             }),
         ).then(() => {

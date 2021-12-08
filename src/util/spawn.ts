@@ -21,7 +21,7 @@ export function spawn(command: string, args: string[], options?: childProcess.Sp
                     stderr: stderr.join(''),
                 });
             } else {
-                reject(new SpawnError(code, stdout.join(''), stderr.join('')));
+                reject(new SpawnError(command, args, code, stdout.join(''), stderr.join('')));
             }
         });
         process.stdout?.on('data', (data: Buffer | string) => {
@@ -34,7 +34,13 @@ export function spawn(command: string, args: string[], options?: childProcess.Sp
 }
 
 export class SpawnError extends Error {
-    constructor(public readonly code: number, public readonly stdout: string, public readonly stderr: string) {
-        super(`process exited with code ${code}`);
+    constructor(
+        public readonly command: string,
+        public readonly args: string[],
+        public readonly code: number,
+        public readonly stdout: string,
+        public readonly stderr: string,
+    ) {
+        super(`spawned process [${[command, ...args].join(' ')}] exited with code ${code}`);
     }
 }

@@ -33,6 +33,7 @@ program
     .description('build and watch the project for changes, rebuilding as necessary')
     .requiredOption('-c, --config <config>', 'temporary directory to output intermediate build files to', '')
     .option('-v, --verbose', 'enable verbose logging', (_, prev) => prev + 1, 0)
+    .option('-q, --quiet', 'quiet the logging', false)
     .option('-t, --tmp <directory>', 'temporary directory to output intermediate build files to', '')
     .option('--release', 'build the release version', false)
     .addOption(
@@ -44,6 +45,7 @@ program
         interface WatchOptions {
             config: string;
             verbose: number;
+            quiet: boolean;
             tmp: string;
             release: boolean;
             mode: BuildTargetPlatform;
@@ -55,6 +57,9 @@ program
                 const { path, cleanup } = await tmpPromise.dir({ unsafeCleanup: true });
                 defer.push(cleanup);
                 opts.tmp = path;
+            }
+            if (opts.quiet) {
+                opts.verbose = -1;
             }
 
             const cwd = ResolvedPath.absolute(process.cwd());

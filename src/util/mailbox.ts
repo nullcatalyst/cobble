@@ -33,12 +33,13 @@ class Mailbox {
                 callback,
                 (async () => {
                     try {
-                        // The result of the previous mailbox does not matter and should not prevent the new one from running
                         await existingMailbox._promise;
-                    } finally {
-                        newMailbox._pending = true;
-                        newMailbox._callback(newMailbox._event);
+                    } catch (err) {
+                        // The result of the previous mailbox does not matter and should not prevent the new one from running
                     }
+
+                    newMailbox._pending = true;
+                    await newMailbox._callback(newMailbox._event);
                 })(),
             );
             return newMailbox;
@@ -64,7 +65,13 @@ export function createMailbox(callback: MailboxCallback): MailboxCallback {
         } else {
             mailbox = Mailbox.dependOn(mailbox, event, callback);
         }
-        mailbox.promise.finally(() => (mailbox = null));
+        mailbox.promise
+            .catch(err => {
+                // Catch the error to prevent the process from crashing due to an unhandled promise rejection
+            })
+            .finally(() => {
+                mailbox = null;
+            });
 
         return mailbox.promise;
     };
