@@ -32,9 +32,13 @@ class Mailbox {
                 event,
                 callback,
                 (async () => {
-                    await existingMailbox._promise;
-                    newMailbox._pending = true;
-                    newMailbox._callback(newMailbox._event);
+                    try {
+                        // The result of the previous mailbox does not matter and should not prevent the new one from running
+                        await existingMailbox._promise;
+                    } finally {
+                        newMailbox._pending = true;
+                        newMailbox._callback(newMailbox._event);
+                    }
                 })(),
             );
             return newMailbox;
@@ -60,7 +64,7 @@ export function createMailbox(callback: MailboxCallback): MailboxCallback {
         } else {
             mailbox = Mailbox.dependOn(mailbox, event, callback);
         }
-        mailbox.promise.then(() => (mailbox = null));
+        mailbox.promise.finally(() => (mailbox = null));
 
         return mailbox.promise;
     };
