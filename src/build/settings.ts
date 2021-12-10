@@ -67,6 +67,7 @@ export class BuildSettings {
         const fileExtProtocols = opts['fileExtProtocols'] ?? {};
         const replaceVariables = Object.assign({}, opts['replaceVariables'] ?? null, {
             'TARGET': () => settings._target,
+            'PATH': (relativePath: string) => settings._basePath.join(relativePath).toString(),
         });
         const pluginNames = opts['pluginNames'] ?? [];
 
