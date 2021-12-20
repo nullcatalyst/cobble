@@ -24,7 +24,7 @@ const cleanup = (...args) => {
 process.on('exit', cleanup);
 process.on('SIGTERM', cleanup);
 process.on('SIGINT', cleanup);
-process.on('SIGKILL', cleanup);
+// process.on('SIGKILL', cleanup);
 
 const program = new Command();
 program.version('0.2.0');
