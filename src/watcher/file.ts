@@ -6,9 +6,11 @@ import { Event, EventType } from './event';
 export class FileWatcher extends BaseWatcher {
     private readonly _watchers: chokidar.FSWatcher[] = [];
 
-    start(basePath: ResolvedPath): void {
+    start(basePath: ResolvedPath, ignorePaths: ResolvedPath[]): void {
         const watcher = chokidar
-            .watch(basePath.toString())
+            .watch(basePath.toString(), {
+                ignored: ignorePaths.map(path => path.toString()),
+            })
             .on('add', fileName => {
                 this.emit(new Event(EventType.AddFile, basePath.join(fileName)));
             })

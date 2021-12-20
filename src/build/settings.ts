@@ -23,6 +23,11 @@ export class BuildSettings {
      * The directory that contains this build file.
      * All relative paths in the build file will be relative to this.
      */
+    private _configPath: ResolvedPath;
+
+    /**
+     * The deepest directory that contains all source files.
+     */
     private _basePath: ResolvedPath;
 
     /** The name as defined in the build file. This may be used to create the output file name if no other output name is given. */
@@ -31,12 +36,14 @@ export class BuildSettings {
     private _release: boolean;
     private _outDirPath: ResolvedPath;
 
+    private _ignores: ResolvedPath[];
     private _srcs: Target[];
     private _deps: ResolvedPath[];
     private _pluginSettings: MapLike<MapLike<any>> = {};
 
     private constructor(target: BuildTargetPlatform, release: boolean) {
         this._raw = { 'name': '' };
+        this._configPath = ResolvedPath.absolute(process.cwd());
         this._basePath = ResolvedPath.absolute(process.cwd());
 
         this._name = '';
@@ -44,13 +51,14 @@ export class BuildSettings {
         this._release = release;
         this._outDirPath = this._basePath;
 
+        this._ignores = [];
         this._srcs = [];
         this._deps = [];
     }
 
     static async load(filePath: ResolvedPath, opts?: Partial<Options>): Promise<BuildSettings> {
         opts = opts ?? {};
-        opts['basePath'] = filePath.dirname();
+        opts['configPath'] = filePath.dirname();
 
         const raw = json5.parse<RawBuildFile>(await fs.promises.readFile(filePath.toString(), { encoding: 'utf8' }));
         return BuildSettings.from(raw, opts);
@@ -58,10 +66,10 @@ export class BuildSettings {
 
     static async from<T = {}>(
         raw: RawBuildFile<T>,
-        opts?: Partial<Options & { 'basePath': ResolvedPath }>,
+        opts?: Partial<Options & { 'configPath': ResolvedPath }>,
     ): Promise<BuildSettings> {
         opts = opts ?? {};
-        const basePath = opts.basePath ?? ResolvedPath.cwd();
+        const configPath = opts['configPath'] ?? ResolvedPath.cwd();
         const release = opts['release'] ?? false;
         const target = opts['target'] ?? (os.platform() as BuildTargetPlatform);
         const fileExtProtocols = opts['fileExtProtocols'] ?? {};
@@ -73,21 +81,25 @@ export class BuildSettings {
 
         const settings = new BuildSettings(opts['target'], opts['release']);
         settings._raw = raw;
-        settings._basePath = basePath;
+        settings._configPath = configPath;
+        settings._basePath = configPath;
 
         settings._name = raw['name'];
         settings._target = target;
         settings._release = release;
         settings._outDirPath = raw['outDir']
-            ? basePath.join(_replaceVariables(raw['outDir'], replaceVariables))
-            : basePath;
+            ? configPath.join(_replaceVariables(raw['outDir'], replaceVariables))
+            : configPath;
 
+        settings._ignores = (raw['ignore'] ?? [])
+            .filter(_isString)
+            .map(ign => configPath.join(_replaceVariables(ign, replaceVariables)));
         settings._srcs = (raw['srcs'] ?? [])
             .filter(_isString)
-            .map(src => Target.parse(_replaceVariables(src, replaceVariables), basePath, fileExtProtocols));
+            .map(src => Target.parse(_replaceVariables(src, replaceVariables), configPath, fileExtProtocols));
         settings._deps = (raw['deps'] ?? [])
             .filter(_isString)
-            .map(src => basePath.join(_replaceVariables(src, replaceVariables)));
+            .map(src => configPath.join(_replaceVariables(src, replaceVariables)));
         settings._pluginSettings = pluginNames.reduce((prev, pluginName) => {
             prev[pluginName] = {};
             _mergePluginSettings(prev[pluginName], raw[pluginName] ?? {}, replaceVariables);
@@ -113,15 +125,22 @@ export class BuildSettings {
                     `with(platform){for(let __retry_count__=0;__retry_count__<10;++__retry_count__){try{return(${platformName});}catch(e){if(e instanceof ReferenceError){platform[e.message.slice(0,e.message.indexOf(' '))]=undefined;}else{throw e;}}}throw new Error('failed to evaluate platform definition for [${platformName}], retried too many times');}`,
                 )(Object.assign({}, knownPlatforms))
             ) {
+                settings._ignores.push(
+                    ...(raw['ignore'] ?? [])
+                        .filter(_isString)
+                        .map(ign => configPath.join(_replaceVariables(ign, replaceVariables))),
+                );
                 settings._srcs.push(
                     ...(rawPlatform['srcs'] ?? [])
                         .filter(_isString)
-                        .map(src => Target.parse(_replaceVariables(src, replaceVariables), basePath, fileExtProtocols)),
+                        .map(src =>
+                            Target.parse(_replaceVariables(src, replaceVariables), configPath, fileExtProtocols),
+                        ),
                 );
                 settings._deps.push(
                     ...(rawPlatform['deps'] ?? [])
                         .filter(_isString)
-                        .map(src => basePath.join(_replaceVariables(src, replaceVariables))),
+                        .map(src => configPath.join(_replaceVariables(src, replaceVariables))),
                 );
                 pluginNames.forEach(pluginName => {
                     _mergePluginSettings(
@@ -132,6 +151,8 @@ export class BuildSettings {
                 });
             }
         }
+
+        settings._basePath = settings.srcs.reduce((prev, src) => prev.commonSubPath(src.path.dirname()), configPath);
 
         return settings;
     }
@@ -154,6 +175,10 @@ export class BuildSettings {
 
     get release(): boolean {
         return this._release;
+    }
+
+    get ignorePaths(): ResolvedPath[] {
+        return this._ignores;
     }
 
     get srcs(): Target[] {

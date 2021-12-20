@@ -97,6 +97,7 @@ program
                 (prev, arg) => prev.commonSubPath(cwd.join(arg).dirname()),
                 cwd.join(configs[0]).dirname(),
             );
+            const ignorePaths: ResolvedPath[] = [];
 
             // Initialize all of the plugins, passing them each of the build settings
             const settingsList = await Promise.all(
@@ -110,11 +111,8 @@ program
                     });
                     console.log(`--- building "${arg}" ---`);
 
-                    // Find the common base path shared by all of the source files
-                    commonBasePath = settings.srcs.reduce(
-                        (prev, src) => prev.commonSubPath(src.path.dirname()),
-                        commonBasePath,
-                    );
+                    commonBasePath = commonBasePath.commonSubPath(settings.basePath);
+                    ignorePaths.push(...settings.ignorePaths);
 
                     // Tell all of the plugins about this build file
                     await Promise.all(
@@ -139,7 +137,7 @@ program
             if (opts.verbose >= 1) {
                 console.log(`[WATCH] ${commonBasePath}`);
             }
-            watcher.start(commonBasePath);
+            watcher.start(commonBasePath, ignorePaths);
 
             // Check if any explicit srcs do not exist under the common base path
             // If they aren't, then send a single event to the watcher to build, it's the only one they're going to get

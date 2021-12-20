@@ -1,5 +1,3 @@
-export type BuildType = 'exe' | 'lib' | 'none';
-export type BuildStandard = 'c11' | 'c17' | 'c++11' | 'c++14' | 'c++17' | 'c++20';
 export type BuildTargetPlatform = 'win32' | 'darwin' | 'linux' | 'wasm';
 
 /**
@@ -9,6 +7,7 @@ export type RawBuildFile<T = {}> = {
     'name': string;
     'outDir'?: string;
 
+    'ignore'?: string[];
     'srcs'?: string[];
     'deps'?: string[];
 
@@ -27,6 +26,7 @@ type RawBuildPlatformSettings<T> =
     | { [expr: string]: RawBuildSettings<T> };
 
 type RawBuildSettings<T> = {
+    'ignore'?: string[];
     'srcs'?: string[];
     'deps'?: string[];
 } & T;
