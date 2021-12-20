@@ -93,7 +93,7 @@ program
 
             // Calculate the longest common subpath shared by all the config files
             const configs = [opts.config];
-            const commonBasePath = configs.reduce(
+            let commonBasePath = configs.reduce(
                 (prev, arg) => prev.commonSubPath(cwd.join(arg).dirname()),
                 cwd.join(configs[0]).dirname(),
             );
@@ -109,6 +109,12 @@ program
                         'pluginNames': plugins.map(plugin => plugin.name()),
                     });
                     console.log(`--- building "${arg}" ---`);
+
+                    // Find the common base path shared by all of the source files
+                    commonBasePath = settings.srcs.reduce(
+                        (prev, src) => prev.commonSubPath(src.path.dirname()),
+                        commonBasePath,
+                    );
 
                     // Tell all of the plugins about this build file
                     await Promise.all(
