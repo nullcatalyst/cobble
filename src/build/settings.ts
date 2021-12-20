@@ -89,7 +89,8 @@ export class BuildSettings {
             .filter(_isString)
             .map(src => basePath.join(_replaceVariables(src, replaceVariables)));
         settings._pluginSettings = pluginNames.reduce((prev, pluginName) => {
-            prev[pluginName] = raw[pluginName] ?? {};
+            prev[pluginName] = {};
+            _mergePluginSettings(prev[pluginName], raw[pluginName] ?? {}, replaceVariables);
             return prev;
         }, {});
 
@@ -123,16 +124,11 @@ export class BuildSettings {
                         .map(src => basePath.join(_replaceVariables(src, replaceVariables))),
                 );
                 pluginNames.forEach(pluginName => {
-                    const mergedPluginSettings = settings._pluginSettings[pluginName];
-                    const pluginSettings = rawPlatform[pluginName] ?? {};
-
-                    for (const prop in pluginSettings) {
-                        if (Array.isArray(pluginSettings[prop]) && Array.isArray(mergedPluginSettings[prop])) {
-                            mergedPluginSettings[prop].push(...pluginSettings[prop]);
-                        } else {
-                            mergedPluginSettings[prop] = pluginSettings[prop];
-                        }
-                    }
+                    _mergePluginSettings(
+                        settings._pluginSettings[pluginName],
+                        rawPlatform[pluginName] ?? {},
+                        replaceVariables,
+                    );
                 });
             }
         }
@@ -186,7 +182,7 @@ function _isString(s: any) {
     return typeof s === 'string';
 }
 
-function _replaceVariables(s: string, variableMap: { [key: string]: (arg?: string) => string }): string {
+function _replaceVariables(s: string, variableMap: MapLike<(arg?: string) => string>): string {
     // Format: ${<name>} for replacements that do not take any arguments
     // Format: ${<name>:<arg>} for replacements that take one argument
     const varRegex = /\$\{([^\}:]+)(?::([^\}]*))?\}/gi;
@@ -196,6 +192,31 @@ function _replaceVariables(s: string, variableMap: { [key: string]: (arg?: strin
         }
         return match;
     });
+}
+
+function _mergePluginSettings(
+    mergedPluginSettings: MapLike<any>,
+    pluginSettings: MapLike<any>,
+    replaceVariables: MapLike<(arg?: string) => string>,
+) {
+    for (const prop in pluginSettings) {
+        if (Array.isArray(pluginSettings[prop])) {
+            if (!Array.isArray(mergedPluginSettings[prop])) {
+                mergedPluginSettings[prop] = [];
+            }
+
+            mergedPluginSettings[prop].push(
+                ...pluginSettings[prop].map(value =>
+                    typeof value === 'string' ? _replaceVariables(value, replaceVariables) : value,
+                ),
+            );
+        } else {
+            mergedPluginSettings[prop] =
+                typeof pluginSettings[prop] === 'string'
+                    ? _replaceVariables(pluginSettings[prop], replaceVariables)
+                    : pluginSettings[prop];
+        }
+    }
 }
 
 interface MapLike<T> {
