@@ -6,7 +6,7 @@
     "bin": "bin/cobble",
     "scripts": {
         "build": "tsc",
-        "preinstall": "npm run build",
+        "install": "npm run build",
         "test": "mocha --require ts-node/register --extensions ts 'src/tests/**/*.ts'",
         "test-watch": "mocha --require ts-node/register --extensions ts --watch --watch-files src 'src/tests/**/*.ts'",
         "test-coverage": "nyc --reporter=html mocha --require ts-node/register --extensions ts 'src/tests/**/*.ts'"

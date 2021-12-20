@@ -190,7 +190,7 @@ function _replaceVariables(s: string, variableMap: { [key: string]: (arg?: strin
     // Format: ${<name>} for replacements that do not take any arguments
     // Format: ${<name>:<arg>} for replacements that take one argument
     const varRegex = /\$\{([^\}:]+)(?::([^\}]*))?\}/gi;
-    return s.replaceAll(varRegex, (match, key, value) => {
+    return s.replace(varRegex, (match, key, value) => {
         if (variableMap[key]) {
             return variableMap[key](value);
         }
