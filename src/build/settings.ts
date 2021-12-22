@@ -160,6 +160,10 @@ export class BuildSettings {
         return this._name;
     }
 
+    get configPath(): ResolvedPath {
+        return this._configPath;
+    }
+
     get basePath(): ResolvedPath {
         return this._basePath;
     }
