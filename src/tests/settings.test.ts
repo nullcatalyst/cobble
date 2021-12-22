@@ -14,7 +14,7 @@ describe('build settings', () => {
                 'deps': ['other/build.json'],
             },
             {
-                'basePath': ResolvedPath.absolute('/', path.posix),
+                'configPath': ResolvedPath.absolute('/config.json', path.posix),
             },
         );
 
@@ -47,7 +47,7 @@ describe('build settings', () => {
                 },
             },
             {
-                'basePath': ResolvedPath.absolute('/', path.posix),
+                'configPath': ResolvedPath.absolute('/config.json', path.posix),
                 'target': 'wasm',
             },
         );
@@ -93,7 +93,7 @@ describe('build settings', () => {
                 },
             },
             {
-                'basePath': ResolvedPath.absolute('/', path.posix),
+                'configPath': ResolvedPath.absolute('/config.json', path.posix),
                 'target': 'wasm',
                 'pluginNames': ['clang'],
             },

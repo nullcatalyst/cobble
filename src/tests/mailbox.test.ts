@@ -2,6 +2,7 @@ import * as chai from 'chai';
 import { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { createMailbox } from '../util/mailbox';
+import { delay } from '../util/promise';
 import { ResolvedPath } from '../util/resolved_path';
 import { Event, EventType } from '../watcher/event';
 import { FakeWatcher } from '../watcher/fake';
@@ -13,16 +14,16 @@ describe('mailbox', () => {
         const filePath = ResolvedPath.absolute('/test');
         const mailboxFn = createMailbox(async event => {
             expect(event).to.equal(expectedEvent);
-        });
+        }, 0);
 
-        let expectedEvent = new Event(EventType.ChangeFile, filePath, new Date('2020-01-02T03:04:05'));
+        const expectedEvent = new Event(EventType.ChangeFile, filePath, new Date('2020-01-02T03:04:05'));
         await mailboxFn(expectedEvent);
     });
 
     it('should handle rejected promises', async () => {
         const mailboxFn = createMailbox(async event => {
             throw new Error('test');
-        });
+        }, 0);
 
         let expectedEvent = new Event(
             EventType.ChangeFile,
@@ -31,22 +32,6 @@ describe('mailbox', () => {
         );
 
         expect(mailboxFn(expectedEvent)).to.eventually.be.rejectedWith('test');
-    });
-
-    it('should handle rejected promises', async () => {
-        const mailboxFn = createMailbox(async event => {
-            throw new Error('test');
-        });
-
-        const filePath = ResolvedPath.absolute('/test');
-        const watcher = new FakeWatcher(-1);
-        watcher.add(filePath, mailboxFn);
-
-        expect(
-            watcher.emit(
-                new Event(EventType.ChangeFile, ResolvedPath.absolute('/test'), new Date('2020-01-02T03:04:05')),
-            ),
-        ).to.eventually.be.rejectedWith('test');
     });
 
     it('should not fail if the previous mailbox entry was rejected', async () => {
@@ -68,7 +53,7 @@ describe('mailbox', () => {
                 return p0;
             }
             return p1;
-        });
+        }, 0);
 
         const filePath = ResolvedPath.absolute('/test');
         const watcher = new FakeWatcher(-1);
@@ -94,7 +79,7 @@ describe('mailbox', () => {
         const filePath = ResolvedPath.absolute('/test');
         const mailboxFn = createMailbox(async event => {
             expect(event).to.equal(expectedEvent);
-        });
+        }, 0);
 
         let expectedEvent = new Event(EventType.ChangeFile, filePath, new Date('2020-01-02T03:04:05'));
         const p1 = mailboxFn(expectedEvent);
@@ -106,8 +91,9 @@ describe('mailbox', () => {
     it('should queue events while one is pending', async () => {
         const filePath = ResolvedPath.absolute('/test');
         const mailboxFn = createMailbox(async event => {
+            await delay(20);
             expect(event).to.equal(expectedEvent);
-        });
+        }, 0);
 
         const e1 = new Event(EventType.ChangeFile, filePath, new Date('2021-01-02T03:04:05'));
         const e2 = new Event(EventType.ChangeFile, filePath, new Date('2022-01-02T03:04:05'));
@@ -125,21 +111,16 @@ describe('mailbox', () => {
         const filePath = ResolvedPath.absolute('/test');
         const mailboxFn = createMailbox(async event => {
             expect(event).to.equal(expectedEvent);
-        });
+        }, 0);
 
-        const e1 = new Event(EventType.ChangeFile, filePath, new Date('2021-01-02T03:04:05')); // first
-        const e2 = new Event(EventType.ChangeFile, filePath, new Date('2023-01-02T03:04:05')); // third
-        const e3 = new Event(EventType.ChangeFile, filePath, new Date('2022-01-02T03:04:05')); // second
+        const e1 = new Event(EventType.ChangeFile, filePath, new Date('2022-01-02T03:04:05')); // second
+        const e2 = new Event(EventType.ChangeFile, filePath, new Date('2021-01-02T03:04:05')); // first (should be ignored)
 
         let expectedEvent = e1;
         const p1 = mailboxFn(e1);
         const p2 = mailboxFn(e2);
-        const p3 = mailboxFn(e3);
-        expect(p2).to.equal(p3);
+        expect(p1).to.equal(p2);
 
         await p1;
-        expectedEvent = e2;
-        await p2;
-        await p3;
     });
 });

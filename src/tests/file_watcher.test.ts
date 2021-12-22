@@ -18,7 +18,7 @@ describe('file watcher', () => {
 
         const dir = ResolvedPath.absolute(dirPath);
         const watcher = new FileWatcher(0);
-        watcher.start(dir);
+        watcher.start(dir, []);
         defer.push(() => watcher.stop());
 
         // Create a new file

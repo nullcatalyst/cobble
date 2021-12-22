@@ -58,7 +58,7 @@ export class BuildSettings {
 
     static async load(filePath: ResolvedPath, opts?: Partial<Options>): Promise<BuildSettings> {
         opts = opts ?? {};
-        opts['configPath'] = filePath.dirname();
+        opts['configPath'] = filePath;
 
         const raw = json5.parse<RawBuildFile>(await fs.promises.readFile(filePath.toString(), { encoding: 'utf8' }));
         return BuildSettings.from(raw, opts);
@@ -69,7 +69,8 @@ export class BuildSettings {
         opts?: Partial<Options & { 'configPath': ResolvedPath }>,
     ): Promise<BuildSettings> {
         opts = opts ?? {};
-        const configPath = opts['configPath'] ?? ResolvedPath.cwd();
+        const configPath = opts['configPath'] ?? ResolvedPath.cwd().join('__config__');
+        const basePath = configPath.dirname();
         const release = opts['release'] ?? false;
         const target = opts['target'] ?? (os.platform() as BuildTargetPlatform);
         const fileExtProtocols = opts['fileExtProtocols'] ?? {};
@@ -82,24 +83,24 @@ export class BuildSettings {
         const settings = new BuildSettings(opts['target'], opts['release']);
         settings._raw = raw;
         settings._configPath = configPath;
-        settings._basePath = configPath;
+        settings._basePath = basePath;
 
         settings._name = raw['name'];
         settings._target = target;
         settings._release = release;
         settings._outDirPath = raw['outDir']
-            ? configPath.join(_replaceVariables(raw['outDir'], replaceVariables))
-            : configPath;
+            ? basePath.join(_replaceVariables(raw['outDir'], replaceVariables))
+            : basePath;
 
         settings._ignores = (raw['ignore'] ?? [])
             .filter(_isString)
-            .map(ign => configPath.join(_replaceVariables(ign, replaceVariables)));
+            .map(ign => basePath.join(_replaceVariables(ign, replaceVariables)));
         settings._srcs = (raw['srcs'] ?? [])
             .filter(_isString)
-            .map(src => Target.parse(_replaceVariables(src, replaceVariables), configPath, fileExtProtocols));
+            .map(src => Target.parse(_replaceVariables(src, replaceVariables), basePath, fileExtProtocols));
         settings._deps = (raw['deps'] ?? [])
             .filter(_isString)
-            .map(src => configPath.join(_replaceVariables(src, replaceVariables)));
+            .map(src => basePath.join(_replaceVariables(src, replaceVariables)));
         settings._pluginSettings = pluginNames.reduce((prev, pluginName) => {
             prev[pluginName] = {};
             _mergePluginSettings(prev[pluginName], raw[pluginName] ?? {}, replaceVariables);
@@ -128,19 +129,17 @@ export class BuildSettings {
                 settings._ignores.push(
                     ...(raw['ignore'] ?? [])
                         .filter(_isString)
-                        .map(ign => configPath.join(_replaceVariables(ign, replaceVariables))),
+                        .map(ign => basePath.join(_replaceVariables(ign, replaceVariables))),
                 );
                 settings._srcs.push(
                     ...(rawPlatform['srcs'] ?? [])
                         .filter(_isString)
-                        .map(src =>
-                            Target.parse(_replaceVariables(src, replaceVariables), configPath, fileExtProtocols),
-                        ),
+                        .map(src => Target.parse(_replaceVariables(src, replaceVariables), basePath, fileExtProtocols)),
                 );
                 settings._deps.push(
                     ...(rawPlatform['deps'] ?? [])
                         .filter(_isString)
-                        .map(src => configPath.join(_replaceVariables(src, replaceVariables))),
+                        .map(src => basePath.join(_replaceVariables(src, replaceVariables))),
                 );
                 pluginNames.forEach(pluginName => {
                     _mergePluginSettings(
@@ -152,7 +151,7 @@ export class BuildSettings {
             }
         }
 
-        settings._basePath = settings.srcs.reduce((prev, src) => prev.commonSubPath(src.path.dirname()), configPath);
+        settings._basePath = settings.srcs.reduce((prev, src) => prev.commonSubPath(src.path.dirname()), basePath);
 
         return settings;
     }
